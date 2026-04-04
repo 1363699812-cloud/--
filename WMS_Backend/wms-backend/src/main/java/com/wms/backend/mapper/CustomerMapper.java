@@ -1,0 +1,7 @@
+package com.wms.backend.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.wms.backend.entity.Customer;
+
+public interface CustomerMapper extends BaseMapper<Customer> {
+}
