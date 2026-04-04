@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-container">
     <el-row :gutter="20">
       <el-col :span="12">
@@ -39,8 +39,8 @@ const loadData = async () => {
   loading.value = true
   try {
     const res = await getCategoryStats()
-    if (res.data.code === 200) {
-      tableData.value = res.data.data || []
+    if (res.code === 200) {
+      tableData.value = res.data || []
       renderCharts()
     }
   } finally { loading.value = false }

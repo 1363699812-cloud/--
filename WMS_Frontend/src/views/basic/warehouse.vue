@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-container">
     <!-- 搜索栏 -->
     <el-card class="search-card">
@@ -115,9 +115,9 @@ const loadData = async () => {
   loading.value = true
   try {
     const res = await getWarehouseList(query)
-    if (res.data.code === 200) {
-      tableData.value = res.data.data.records
-      total.value = res.data.data.total
+    if (res.code === 200) {
+      tableData.value = res.data.records
+      total.value = res.data.total
     }
   } finally {
     loading.value = false
@@ -142,7 +142,7 @@ const handleSubmit = () => {
     submitting.value = true
     try {
       const res = form.id ? await updateWarehouse(form.id, form) : await saveWarehouse(form)
-      if (res.data.code === 200) {
+      if (res.code === 200) {
         ElMessage.success(form.id ? '更新成功' : '新增成功')
         dialogVisible.value = false
         loadData()
@@ -156,7 +156,7 @@ const handleSubmit = () => {
 const handleDelete = (id) => {
   ElMessageBox.confirm('确认删除该仓库？', '提示', { type: 'warning' }).then(async () => {
     const res = await deleteWarehouse(id)
-    if (res.data.code === 200) { ElMessage.success('删除成功'); loadData() }
+    if (res.code === 200) { ElMessage.success('删除成功'); loadData() }
   }).catch(() => {})
 }
 

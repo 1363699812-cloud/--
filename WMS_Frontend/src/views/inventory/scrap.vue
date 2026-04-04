@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-container">
     <el-card class="search-card">
       <el-form :inline="true" :model="query">
@@ -174,7 +174,7 @@ const loadData = async () => {
   loading.value = true
   try {
     const res = await getScrapOrderList(query)
-    if (res.data.code === 200) { tableData.value = res.data.data.records; total.value = res.data.data.total }
+    if (res.code === 200) { tableData.value = res.data.records; total.value = res.data.total }
   } finally { loading.value = false }
 }
 
@@ -193,7 +193,7 @@ const handleSubmit = () => {
     submitting.value = true
     try {
       const res = await createScrapOrder(form)
-      if (res.data.code === 200) { ElMessage.success('创建成功'); dialogVisible.value = false; loadData() }
+      if (res.code === 200) { ElMessage.success('创建成功'); dialogVisible.value = false; loadData() }
     } finally { submitting.value = false }
   })
 }
@@ -201,28 +201,28 @@ const handleSubmit = () => {
 const viewDetail = async (row) => {
   Object.assign(detail, row)
   const res = await getScrapItems(row.id)
-  if (res.data.code === 200) detailItems.value = res.data.data
+  if (res.code === 200) detailItems.value = res.data
   detailVisible.value = true
 }
 
 const handleAudit = (id) => {
-  ElMessageBox.confirm('确认审核通过？', '提示', { type: 'warning' }).then(async () => {
+  ElMessageBox.confirm('确认审核通过吗', '提示', { type: 'warning' }).then(async () => {
     const res = await auditScrapOrder(id)
-    if (res.data.code === 200) { ElMessage.success('审核成功'); loadData() }
+    if (res.code === 200) { ElMessage.success('审核成功'); loadData() }
   }).catch(() => {})
 }
 
 const handleComplete = (id) => {
-  ElMessageBox.confirm('确认执行？库存将被扣减。', '提示', { type: 'warning' }).then(async () => {
+  ElMessageBox.confirm('确认执行？库存将被扣减', '提示', { type: 'warning' }).then(async () => {
     const res = await completeScrapOrder(id)
-    if (res.data.code === 200) { ElMessage.success('执行成功'); loadData() }
+    if (res.code === 200) { ElMessage.success('执行成功'); loadData() }
   }).catch(() => {})
 }
 
 const handleDelete = (id) => {
-  ElMessageBox.confirm('确认删除？', '提示', { type: 'warning' }).then(async () => {
+  ElMessageBox.confirm('确认删除吗', '提示', { type: 'warning' }).then(async () => {
     const res = await deleteScrapOrder(id)
-    if (res.data.code === 200) { ElMessage.success('删除成功'); loadData() }
+    if (res.code === 200) { ElMessage.success('删除成功'); loadData() }
   }).catch(() => {})
 }
 

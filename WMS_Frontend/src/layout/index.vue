@@ -20,7 +20,7 @@
           <!-- 只有一个子菜单时直接展示 -->
           <el-menu-item
             v-if="route.children && route.children.length === 1"
-            :index="route.path + '/' + route.children[0].path"
+            :index="(route.path === '/' ? '' : route.path) + '/' + route.children[0].path"
           >
             <el-icon><component :is="route.children[0].meta?.icon || route.meta?.icon" /></el-icon>
             <template #title>{{ route.children[0].meta?.title }}</template>

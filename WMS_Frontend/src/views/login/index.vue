@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="login-container">
     <div class="login-card">
       <h2 class="title">WMS 仓库管理系统</h2>
@@ -40,11 +40,9 @@ const handleLogin = () => {
     loading.value = true
     try {
       const res = await login(form)
-      if (res.data.code === 200) {
-        const { token, id, username, realName, role } = res.data.data
-        userStore.loginAction(token, { id, username, realName, role })
-        router.push('/')
-      }
+      const { token, id, username, realName, role } = res.data
+      userStore.setLogin({ token, id, username, realName, role })
+      router.push('/')
     } finally {
       loading.value = false
     }

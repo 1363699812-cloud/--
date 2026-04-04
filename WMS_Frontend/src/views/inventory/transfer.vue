@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-container">
     <el-card class="search-card">
       <el-form :inline="true" :model="query">
@@ -59,7 +59,7 @@
       />
     </el-card>
 
-    <!-- 新建调拨单 -->
+    <!-- 新建调拨单-->
     <el-dialog v-model="dialogVisible" title="新建调拨单" width="800px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-row :gutter="16">
@@ -163,7 +163,7 @@ const loadData = async () => {
   loading.value = true
   try {
     const res = await getTransferOrderList(query)
-    if (res.data.code === 200) { tableData.value = res.data.data.records; total.value = res.data.data.total }
+    if (res.code === 200) { tableData.value = res.data.records; total.value = res.data.total }
   } finally { loading.value = false }
 }
 
@@ -183,7 +183,7 @@ const handleSubmit = () => {
     submitting.value = true
     try {
       const res = await createTransferOrder(form)
-      if (res.data.code === 200) { ElMessage.success('创建成功'); dialogVisible.value = false; loadData() }
+      if (res.code === 200) { ElMessage.success('创建成功'); dialogVisible.value = false; loadData() }
     } finally { submitting.value = false }
   })
 }
@@ -191,28 +191,28 @@ const handleSubmit = () => {
 const viewDetail = async (row) => {
   Object.assign(detail, row)
   const res = await getTransferItems(row.id)
-  if (res.data.code === 200) detailItems.value = res.data.data
+  if (res.code === 200) detailItems.value = res.data
   detailVisible.value = true
 }
 
 const handleAudit = (id) => {
-  ElMessageBox.confirm('确认审核通过该调拨单？', '提示', { type: 'warning' }).then(async () => {
+  ElMessageBox.confirm('确认审核通过该调拨单吗', '提示', { type: 'warning' }).then(async () => {
     const res = await auditTransferOrder(id)
-    if (res.data.code === 200) { ElMessage.success('审核成功'); loadData() }
+    if (res.code === 200) { ElMessage.success('审核成功'); loadData() }
   }).catch(() => {})
 }
 
 const handleComplete = (id) => {
-  ElMessageBox.confirm('确认执行调拨？库存将在仓库间转移。', '提示', { type: 'warning' }).then(async () => {
+  ElMessageBox.confirm('确认执行调拨？库存将在仓库间转移', '提示', { type: 'warning' }).then(async () => {
     const res = await completeTransferOrder(id)
-    if (res.data.code === 200) { ElMessage.success('调拨完成'); loadData() }
+    if (res.code === 200) { ElMessage.success('调拨完成'); loadData() }
   }).catch(() => {})
 }
 
 const handleDelete = (id) => {
-  ElMessageBox.confirm('确认删除该调拨单？', '提示', { type: 'warning' }).then(async () => {
+  ElMessageBox.confirm('确认删除该调拨单吗', '提示', { type: 'warning' }).then(async () => {
     const res = await deleteTransferOrder(id)
-    if (res.data.code === 200) { ElMessage.success('删除成功'); loadData() }
+    if (res.code === 200) { ElMessage.success('删除成功'); loadData() }
   }).catch(() => {})
 }
 

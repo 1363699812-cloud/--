@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-container">
     <el-card>
       <template #header>
@@ -42,7 +42,7 @@ const loadData = async () => {
   loading.value = true
   try {
     const res = await getStockAlerts()
-    if (res.data.code === 200) tableData.value = res.data.data
+    if (res.code === 200) tableData.value = res.data
   } finally { loading.value = false }
 }
 

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="dashboard">
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stat-row">
@@ -70,8 +70,8 @@ const statCards = ref([
 
 const loadData = async () => {
   const res = await getDashboard()
-  if (res.data.code === 200) {
-    const d = res.data.data
+  if (res.code === 200) {
+    const d = res.data
     Object.assign(dashboard, d)
     statCards.value[0].value = d.materialCount || 0
     statCards.value[1].value = d.warehouseCount || 0

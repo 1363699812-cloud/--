@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-container">
     <el-card class="search-card">
       <el-form :inline="true" :model="query">
@@ -62,7 +62,7 @@ const loadData = async () => {
   loading.value = true
   try {
     const res = await getOperationLogList(query)
-    if (res.data.code === 200) { tableData.value = res.data.data.records; total.value = res.data.data.total }
+    if (res.code === 200) { tableData.value = res.data.records; total.value = res.data.total }
   } finally { loading.value = false }
 }
 

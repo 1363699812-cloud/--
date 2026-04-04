@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-container">
     <el-card class="search-card">
       <el-form :inline="true" :model="query">
@@ -54,8 +54,8 @@ const loadData = async () => {
   loading.value = true
   try {
     const res = await getOutboundStats(query.value)
-    if (res.data.code === 200) {
-      tableData.value = res.data.data || []
+    if (res.code === 200) {
+      tableData.value = res.data || []
       renderChart()
     }
   } finally { loading.value = false }
