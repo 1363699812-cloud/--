@@ -9,9 +9,13 @@ public interface IReportService {
 
     List<Map<String, Object>> getInventorySummary(Long warehouseId);
 
-    Map<String, Object> getInboundStats(String startDate, String endDate);
+    List<Map<String, Object>> getInboundStats(String startDate, String endDate);
 
-    Map<String, Object> getOutboundStats(String startDate, String endDate);
+    List<Map<String, Object>> getOutboundStats(String startDate, String endDate);
 
     List<Map<String, Object>> getCategoryStats();
+
+    List<Map<String, Object>> getAbcAnalysis();
+
+    List<Map<String, Object>> getTurnoverRate(String startDate, String endDate);
 }

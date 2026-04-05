@@ -23,4 +23,6 @@ public interface IInboundOrderService extends IService<InboundOrder> {
     boolean completeInboundOrder(Long orderId);
 
     boolean updateInboundOrder(Long orderId, InboundOrder order, List<InboundItem> items);
+
+    boolean rejectInboundOrder(Long orderId);
 }

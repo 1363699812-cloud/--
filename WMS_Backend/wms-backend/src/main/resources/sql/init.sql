@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS `user` (
     `real_name` VARCHAR(50) DEFAULT NULL COMMENT '真实姓名',
     `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号',
     `email` VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
-    `role` VARCHAR(30) DEFAULT 'warehouse_keeper' COMMENT '角色: admin/warehouse_keeper/purchaser_seller',
+    `role` VARCHAR(30) DEFAULT 'warehouse_keeper' COMMENT '角色: admin/warehouse_keeper/purchaser/seller',
     `status` INT DEFAULT 1 COMMENT '状态 1-启用 0-禁用',
     `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `warehouse` (
     `phone` VARCHAR(20) DEFAULT NULL COMMENT '联系电话',
     `description` TEXT DEFAULT NULL COMMENT '描述',
     `capacity` INT DEFAULT NULL COMMENT '容量',
-    `status` VARCHAR(20) DEFAULT 'active' COMMENT '状态 active/inactive',
+    `status` INT DEFAULT 1 COMMENT '状态 1-启用 0-停用',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `category` (
     `description` TEXT DEFAULT NULL COMMENT '分类描述',
     `parent_id` BIGINT DEFAULT NULL COMMENT '父级分类ID',
     `sort_order` INT DEFAULT 0 COMMENT '排序',
-    `status` VARCHAR(20) DEFAULT 'active' COMMENT '状态',
+    `status` INT DEFAULT 1 COMMENT '状态 1-启用 0-停用',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`)
@@ -353,14 +353,14 @@ INSERT INTO `user` (`username`, `password`, `real_name`, `role`, `status`) VALUE
 
 -- 测试仓库
 INSERT INTO `warehouse` (`name`, `code`, `address`, `contact_person`, `phone`, `status`) VALUES
-('主仓库', 'WH001', '厂区A栋1楼', '张三', '13800138001', 'active'),
-('备用仓库', 'WH002', '厂区B栋2楼', '李四', '13800138002', 'active');
+('主仓库', 'WH001', '厂区A栋1楼', '张三', '13800138001', 1),
+('备用仓库', 'WH002', '厂区B栋2楼', '李四', '13800138002', 1);
 
 -- 测试分类
 INSERT INTO `category` (`name`, `code`, `description`, `status`) VALUES
-('电子元器件', 'CAT001', '各类电子元件', 'active'),
-('机械零件', 'CAT002', '机械加工零部件', 'active'),
-('办公用品', 'CAT003', '日常办公耗材', 'active');
+('电子元器件', 'CAT001', '各类电子元件', 1),
+('机械零件', 'CAT002', '机械加工零部件', 1),
+('办公用品', 'CAT003', '日常办公耗材', 1);
 
 -- 测试物资
 INSERT INTO `material` (`code`, `name`, `category_id`, `unit`, `specification`, `min_stock`, `max_stock`, `safety_stock`, `status`) VALUES

@@ -41,4 +41,15 @@ public class ReportController {
     public Result categoryStats() {
         return Result.success(reportService.getCategoryStats());
     }
+
+    @GetMapping("/abc-analysis")
+    public Result abcAnalysis() {
+        return Result.success(reportService.getAbcAnalysis());
+    }
+
+    @GetMapping("/turnover-rate")
+    public Result turnoverRate(@RequestParam(required = false) String startDate,
+                               @RequestParam(required = false) String endDate) {
+        return Result.success(reportService.getTurnoverRate(startDate, endDate));
+    }
 }

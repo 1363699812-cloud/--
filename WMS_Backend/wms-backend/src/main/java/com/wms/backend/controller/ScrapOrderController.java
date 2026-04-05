@@ -3,6 +3,7 @@ package com.wms.backend.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.backend.annotation.Log;
+import com.wms.backend.annotation.RequireRole;
 import com.wms.backend.common.Result;
 import com.wms.backend.entity.ScrapItem;
 import com.wms.backend.entity.ScrapOrder;
@@ -50,6 +51,7 @@ public class ScrapOrderController {
 
     @Log(value = "创建报损单", module = "报损管理")
     @PostMapping
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result create(@RequestBody CreateScrapRequest request) {
         boolean result = scrapOrderService.createScrapOrder(request.getOrder(), request.getItems());
         return result ? Result.success("创建成功") : Result.error("创建失败");
@@ -57,13 +59,27 @@ public class ScrapOrderController {
 
     @Log(value = "审核报损单", module = "报损管理")
     @PostMapping("/{orderId}/audit")
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result audit(@PathVariable Long orderId) {
-        boolean result = scrapOrderService.auditScrapOrder(orderId);
-        return result ? Result.success("审核成功") : Result.error("审核失败");
+        try {
+            boolean result = scrapOrderService.auditScrapOrder(orderId);
+            return result ? Result.success("审核成功") : Result.error("审核失败");
+        } catch (RuntimeException e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Log(value = "驳回报损单", module = "报损管理")
+    @PostMapping("/{orderId}/reject")
+    @RequireRole({"admin", "warehouse_keeper"})
+    public Result reject(@PathVariable Long orderId) {
+        boolean result = scrapOrderService.rejectScrapOrder(orderId);
+        return result ? Result.success("已驳回") : Result.error("驳回失败");
     }
 
     @Log(value = "完成报损单", module = "报损管理")
     @PostMapping("/{orderId}/complete")
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result complete(@PathVariable Long orderId) {
         boolean result = scrapOrderService.completeScrapOrder(orderId);
         return result ? Result.success("完成报损") : Result.error("完成失败");
@@ -71,6 +87,7 @@ public class ScrapOrderController {
 
     @Log(value = "删除报损单", module = "报损管理")
     @DeleteMapping("/{id}")
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result delete(@PathVariable Long id) {
         ScrapOrder order = scrapOrderService.getById(id);
         if (order != null && order.getStatus() != 0) {

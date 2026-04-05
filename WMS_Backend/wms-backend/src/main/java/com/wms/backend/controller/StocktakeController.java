@@ -3,6 +3,7 @@ package com.wms.backend.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.backend.annotation.Log;
+import com.wms.backend.annotation.RequireRole;
 import com.wms.backend.common.Result;
 import com.wms.backend.entity.StocktakeItem;
 import com.wms.backend.entity.StocktakeOrder;
@@ -48,6 +49,7 @@ public class StocktakeController {
 
     @Log(value = "创建盘点单", module = "盘点管理")
     @PostMapping
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result create(@RequestBody CreateStocktakeRequest request) {
         boolean result = stocktakeOrderService.createStocktakeOrder(request.getOrder(), request.getItems());
         return result ? Result.success("创建成功") : Result.error("创建失败");
@@ -55,6 +57,7 @@ public class StocktakeController {
 
     @Log(value = "完成盘点", module = "盘点管理")
     @PostMapping("/{orderId}/complete")
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result complete(@PathVariable Long orderId) {
         boolean result = stocktakeOrderService.completeStocktakeOrder(orderId);
         return result ? Result.success("盘点完成") : Result.error("完成失败");
@@ -65,15 +68,21 @@ public class StocktakeController {
      */
     @PutMapping("/item/{itemId}")
     public Result updateItem(@PathVariable Long itemId, @RequestBody StocktakeItem item) {
-        item.setId(itemId);
-        if (item.getActualQuantity() != null && item.getSystemQuantity() != null) {
-            item.setDiffQuantity(item.getActualQuantity() - item.getSystemQuantity());
+        StocktakeItem existing = stocktakeItemService.getById(itemId);
+        if (existing == null) {
+            return Result.error("盘点明细不存在");
         }
-        return stocktakeItemService.updateById(item) ? Result.success("更新成功") : Result.error("更新失败");
+        existing.setActualQuantity(item.getActualQuantity());
+        existing.setRemark(item.getRemark());
+        if (existing.getActualQuantity() != null && existing.getSystemQuantity() != null) {
+            existing.setDiffQuantity(existing.getActualQuantity() - existing.getSystemQuantity());
+        }
+        return stocktakeItemService.updateById(existing) ? Result.success("更新成功") : Result.error("更新失败");
     }
 
     @Log(value = "删除盘点单", module = "盘点管理")
     @DeleteMapping("/{id}")
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result delete(@PathVariable Long id) {
         StocktakeOrder order = stocktakeOrderService.getById(id);
         if (order != null && order.getStatus() != 0) {

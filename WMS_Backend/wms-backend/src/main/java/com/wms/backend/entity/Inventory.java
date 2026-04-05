@@ -19,7 +19,7 @@ public class Inventory {
 
     private Integer lockQuantity; // 锁定数量(预占库存)
 
-    @TableField(value = "version", update = "%s+1")
+    @Version
     private Long version; // 乐观锁版本号
 
     @TableField(fill = FieldFill.INSERT)

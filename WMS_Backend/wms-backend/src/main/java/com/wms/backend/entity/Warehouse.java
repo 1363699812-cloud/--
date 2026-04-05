@@ -21,7 +21,7 @@ public class Warehouse {
     private String phone;         // 联系电话
     private String description;   // 描述
     private Integer capacity;     // 容量
-    private String status;        // 状态 (active/inactive)
+    private Integer status;        // 状态 (1启用/0停用)
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -93,9 +93,19 @@ const userStore = useUserStore()
 const isCollapse = ref(false)
 
 const menuRoutes = computed(() => {
-  return router.options.routes.filter(
-    (r) => r.path !== '/login' && r.children
-  )
+  const role = userStore.role
+  return router.options.routes.filter((r) => {
+    if (r.path === '/login' || !r.children) return false
+    if (r.meta?.roles && r.meta.roles.length > 0 && !r.meta.roles.includes(role)) return false
+    return true
+  }).map((r) => {
+    if (!r.children) return r
+    const filteredChildren = r.children.filter((child) => {
+      if (child.meta?.roles && child.meta.roles.length > 0 && !child.meta.roles.includes(role)) return false
+      return true
+    })
+    return { ...r, children: filteredChildren }
+  }).filter((r) => r.children && r.children.length > 0)
 })
 
 const activeMenu = computed(() => route.path)

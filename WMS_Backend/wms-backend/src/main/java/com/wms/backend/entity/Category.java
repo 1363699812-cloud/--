@@ -19,7 +19,7 @@ public class Category {
     private String description;   // 分类描述
     private Long parentId;        // 父级分类ID（支持多级分类）
     private Integer sortOrder;    // 排序
-    private String status;        // 状态 (active/inactive)
+    private Integer status;        // 状态 (1启用/0停用)
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

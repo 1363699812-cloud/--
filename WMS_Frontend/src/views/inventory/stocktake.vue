@@ -85,6 +85,9 @@
         </el-table-column>
         <el-table-column prop="systemQuantity" label="系统数量" width="100" align="right" />
         <el-table-column label="实际数量" width="140">
+          <template #header>
+            <span style="color: #f56c6c;">*</span> 实际数量
+          </template>
           <template #default="{ row }">
             <el-input-number v-if="detailOrder.status === 0" v-model="row.actualQuantity" :min="0" size="small" style="width:100%;" @change="updateItem(row)" />
             <span v-else>{{ row.actualQuantity }}</span>
@@ -159,7 +162,11 @@ const handleSubmit = () => {
     if (!valid) return
     submitting.value = true
     try {
-      const res = await createStocktakeOrder(form)
+      const submitData = {
+        order: { warehouseId: form.warehouseId, remark: form.remark },
+        items: []
+      }
+      const res = await createStocktakeOrder(submitData)
       if (res.code === 200) { ElMessage.success('创建成功'); dialogVisible.value = false; loadData() }
     } finally { submitting.value = false }
   })
@@ -173,11 +180,17 @@ const viewDetail = async (row) => {
 }
 
 const updateItem = async (row) => {
+  if (row.actualQuantity === null || row.actualQuantity === undefined) return
   row.diffQuantity = (row.actualQuantity || 0) - (row.systemQuantity || 0)
   await updateStocktakeItem(row.id, { actualQuantity: row.actualQuantity, remark: row.remark })
 }
 
 const handleComplete = (id) => {
+  const unfilledItems = detailItems.value.filter(item => item.actualQuantity === null || item.actualQuantity === undefined)
+  if (unfilledItems.length > 0) {
+    ElMessage.warning(`还有 ${unfilledItems.length} 项物资未录入实际数量，请先完成录入`)
+    return
+  }
   ElMessageBox.confirm('确认完成盘点？差异将自动调整库存', '提示', { type: 'warning' }).then(async () => {
     const res = await completeStocktakeOrder(id)
     if (res.code === 200) { ElMessage.success('盘点完成'); loadData() }

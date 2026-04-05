@@ -3,6 +3,7 @@ package com.wms.backend.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.backend.annotation.Log;
+import com.wms.backend.annotation.RequireRole;
 import com.wms.backend.common.Result;
 import com.wms.backend.entity.TransferItem;
 import com.wms.backend.entity.TransferOrder;
@@ -50,6 +51,7 @@ public class TransferOrderController {
 
     @Log(value = "创建调拨单", module = "调拨管理")
     @PostMapping
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result create(@RequestBody CreateTransferRequest request) {
         boolean result = transferOrderService.createTransferOrder(request.getOrder(), request.getItems());
         return result ? Result.success("创建成功") : Result.error("创建失败");
@@ -57,20 +59,39 @@ public class TransferOrderController {
 
     @Log(value = "审核调拨单", module = "调拨管理")
     @PostMapping("/{orderId}/audit")
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result audit(@PathVariable Long orderId) {
-        boolean result = transferOrderService.auditTransferOrder(orderId);
-        return result ? Result.success("审核成功") : Result.error("审核失败");
+        try {
+            boolean result = transferOrderService.auditTransferOrder(orderId);
+            return result ? Result.success("审核成功") : Result.error("审核失败");
+        } catch (RuntimeException e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Log(value = "驳回调拨单", module = "调拨管理")
+    @PostMapping("/{orderId}/reject")
+    @RequireRole({"admin", "warehouse_keeper"})
+    public Result reject(@PathVariable Long orderId) {
+        boolean result = transferOrderService.rejectTransferOrder(orderId);
+        return result ? Result.success("已驳回") : Result.error("驳回失败");
     }
 
     @Log(value = "完成调拨单", module = "调拨管理")
     @PostMapping("/{orderId}/complete")
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result complete(@PathVariable Long orderId) {
-        boolean result = transferOrderService.completeTransferOrder(orderId);
-        return result ? Result.success("完成调拨") : Result.error("完成失败");
+        try {
+            boolean result = transferOrderService.completeTransferOrder(orderId);
+            return result ? Result.success("完成调拨") : Result.error("完成失败");
+        } catch (RuntimeException e) {
+            return Result.error(e.getMessage());
+        }
     }
 
     @Log(value = "删除调拨单", module = "调拨管理")
     @DeleteMapping("/{id}")
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result delete(@PathVariable Long id) {
         TransferOrder order = transferOrderService.getById(id);
         if (order != null && order.getStatus() != 0) {

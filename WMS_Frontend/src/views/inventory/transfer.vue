@@ -6,10 +6,11 @@
           <el-input v-model="query.orderNo" placeholder="请输入单据编号" clearable @keyup.enter="handleSearch" />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="query.status" placeholder="全部" clearable>
+          <el-select v-model="query.status" placeholder="全部" clearable style="width: 130px;">
             <el-option label="待审核" :value="0" />
             <el-option label="已审核" :value="1" />
             <el-option label="已完成" :value="2" />
+            <el-option label="已驳回" :value="-1" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -42,6 +43,7 @@
           <template #default="{ row }">
             <el-button link type="primary" @click="viewDetail(row)">详情</el-button>
             <el-button link type="warning" v-if="row.status === 0" @click="handleAudit(row.id)">审核</el-button>
+            <el-button link type="danger" v-if="row.status === 0" @click="handleReject(row.id)">驳回</el-button>
             <el-button link type="success" v-if="row.status === 1" @click="handleComplete(row.id)">执行调拨</el-button>
             <el-button link type="danger" v-if="row.status === 0" @click="handleDelete(row.id)">删除</el-button>
           </template>
@@ -130,11 +132,11 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  getTransferOrderList, createTransferOrder, auditTransferOrder, completeTransferOrder,
+  getTransferOrderList, createTransferOrder, auditTransferOrder, rejectTransferOrder, completeTransferOrder,
   deleteTransferOrder, getTransferItems, getAllWarehouses, getAllMaterials
 } from '@/api'
 
-const statusMap = { 0: { label: '待审核', type: 'warning' }, 1: { label: '已审核', type: '' }, 2: { label: '已完成', type: 'success' } }
+const statusMap = { '-1': { label: '已驳回', type: 'danger' }, 0: { label: '待审核', type: 'warning' }, 1: { label: '已审核', type: '' }, 2: { label: '已完成', type: 'success' } }
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -185,7 +187,11 @@ const handleSubmit = () => {
     if (!form.items.length || form.items.some((i) => !i.materialId)) { ElMessage.warning('请至少添加一条物资明细'); return }
     submitting.value = true
     try {
-      const res = await createTransferOrder(form)
+      const submitData = {
+        order: { fromWarehouseId: form.fromWarehouseId, toWarehouseId: form.toWarehouseId, remark: form.remark },
+        items: form.items
+      }
+      const res = await createTransferOrder(submitData)
       if (res.code === 200) { ElMessage.success('创建成功'); dialogVisible.value = false; loadData() }
     } finally { submitting.value = false }
   })
@@ -202,6 +208,14 @@ const handleAudit = (id) => {
   ElMessageBox.confirm('确认审核通过该调拨单吗', '提示', { type: 'warning' }).then(async () => {
     const res = await auditTransferOrder(id)
     if (res.code === 200) { ElMessage.success('审核成功'); loadData() }
+    else { ElMessage.error(res.message || '审核失败') }
+  }).catch(() => {})
+}
+
+const handleReject = (id) => {
+  ElMessageBox.confirm('确认驳回该调拨单吗', '提示', { type: 'warning' }).then(async () => {
+    const res = await rejectTransferOrder(id)
+    if (res.code === 200) { ElMessage.success('已驳回'); loadData() }
   }).catch(() => {})
 }
 

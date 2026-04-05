@@ -8,10 +8,12 @@ import com.wms.backend.mapper.TransferOrderMapper;
 import com.wms.backend.mapper.InventoryTransactionMapper;
 import com.wms.backend.service.IInventoryService;
 import com.wms.backend.service.ITransferOrderService;
+import com.wms.backend.service.IWarehouseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.wms.backend.utils.OrderNoUtil;
 import java.util.List;
 
 @Service
@@ -27,9 +29,13 @@ public class TransferOrderServiceImpl extends ServiceImpl<TransferOrderMapper, T
     @Autowired
     private InventoryTransactionMapper inventoryTransactionMapper;
 
+    @Autowired
+    private IWarehouseService warehouseService;
+
     @Override
     @Transactional
     public boolean createTransferOrder(TransferOrder order, List<TransferItem> items) {
+        order.setOrderNo(OrderNoUtil.generate("DB"));
         order.setStatus(0);
         boolean saved = this.save(order);
         if (!saved) return false;
@@ -47,18 +53,38 @@ public class TransferOrderServiceImpl extends ServiceImpl<TransferOrderMapper, T
         TransferOrder order = this.getById(orderId);
         if (order == null || order.getStatus() != 0) return false;
 
-        // 检查源仓库库存是否充足
         QueryWrapper<TransferItem> wrapper = new QueryWrapper<>();
         wrapper.eq("order_id", orderId);
         List<TransferItem> items = transferItemMapper.selectList(wrapper);
 
+        // 检查源仓库库存是否充足
         for (TransferItem item : items) {
             if (!inventoryService.checkStockSufficient(order.getFromWarehouseId(), item.getMaterialId(), item.getQuantity())) {
                 throw new RuntimeException("源仓库库存不足，物资ID: " + item.getMaterialId());
             }
         }
 
+        // 校验目标仓库容量
+        Warehouse toWarehouse = warehouseService.getById(order.getToWarehouseId());
+        if (toWarehouse != null && toWarehouse.getCapacity() != null && toWarehouse.getCapacity() > 0) {
+            Integer currentTotal = inventoryService.getTotalQuantityByWarehouseId(order.getToWarehouseId());
+            int transferTotal = items.stream().mapToInt(TransferItem::getQuantity).sum();
+            if (currentTotal + transferTotal > toWarehouse.getCapacity()) {
+                throw new RuntimeException("审核失败：目标仓库【" + toWarehouse.getName() + "】容量不足，当前库存" + currentTotal
+                        + "，调拨数量" + transferTotal + "，容量上限" + toWarehouse.getCapacity());
+            }
+        }
+
         order.setStatus(1);
+        return this.updateById(order);
+    }
+
+    @Override
+    @Transactional
+    public boolean rejectTransferOrder(Long orderId) {
+        TransferOrder order = this.getById(orderId);
+        if (order == null || order.getStatus() != 0) return false;
+        order.setStatus(-1);
         return this.updateById(order);
     }
 
@@ -71,6 +97,17 @@ public class TransferOrderServiceImpl extends ServiceImpl<TransferOrderMapper, T
         QueryWrapper<TransferItem> wrapper = new QueryWrapper<>();
         wrapper.eq("order_id", orderId);
         List<TransferItem> items = transferItemMapper.selectList(wrapper);
+
+        // 校验目标仓库容量
+        Warehouse warehouse = warehouseService.getById(order.getToWarehouseId());
+        if (warehouse != null && warehouse.getCapacity() != null && warehouse.getCapacity() > 0) {
+            Integer currentTotal = inventoryService.getTotalQuantityByWarehouseId(order.getToWarehouseId());
+            int transferTotal = items.stream().mapToInt(TransferItem::getQuantity).sum();
+            if (currentTotal + transferTotal > warehouse.getCapacity()) {
+                throw new RuntimeException("目标仓库容量不足，当前库存: " + currentTotal
+                        + "，调拨数量: " + transferTotal + "，仓库容量: " + warehouse.getCapacity());
+            }
+        }
 
         for (TransferItem item : items) {
             // 源仓库减库存

@@ -4,8 +4,11 @@ package com.wms.backend.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.backend.annotation.Log;
+import com.wms.backend.annotation.RequireRole;
 import com.wms.backend.common.Result;
+import com.wms.backend.entity.Inventory;
 import com.wms.backend.entity.Warehouse;
+import com.wms.backend.service.IInventoryService;
 import com.wms.backend.service.IWarehouseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +21,9 @@ public class WarehouseController {
 
     @Autowired
     private IWarehouseService warehouseService;
+
+    @Autowired
+    private IInventoryService inventoryService;
 
     /**
      * 获取仓库列表（分页）
@@ -36,6 +42,7 @@ public class WarehouseController {
         if (address != null && !address.isEmpty()) {
             wrapper.like("address", address);
         }
+        wrapper.orderByDesc("status").orderByDesc("created_at");
 
         Page<Warehouse> result = warehouseService.page(page, wrapper);
         return Result.success(result);
@@ -46,7 +53,9 @@ public class WarehouseController {
      */
     @GetMapping("/all")
     public Result getAllWarehouses() {
-        List<Warehouse> warehouses = warehouseService.list();
+        QueryWrapper<Warehouse> wrapper = new QueryWrapper<>();
+        wrapper.eq("status", 1);
+        List<Warehouse> warehouses = warehouseService.list(wrapper);
         return Result.success(warehouses);
     }
 
@@ -67,6 +76,7 @@ public class WarehouseController {
      */
     @Log(value = "创建仓库", module = "仓库管理")
     @PostMapping
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result createWarehouse(@RequestBody Warehouse warehouse) {
         // 校验仓库容量
         if (warehouse.getCapacity() == null || warehouse.getCapacity() < 1) {
@@ -92,6 +102,7 @@ public class WarehouseController {
      */
     @Log(value = "修改仓库", module = "仓库管理")
     @PutMapping("/{id}")
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result updateWarehouse(@PathVariable Long id, @RequestBody Warehouse warehouse) {
         warehouse.setId(id);
 
@@ -119,12 +130,45 @@ public class WarehouseController {
      */
     @Log(value = "删除仓库", module = "仓库管理")
     @DeleteMapping("/{id}")
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result deleteWarehouse(@PathVariable Long id) {
+        Warehouse warehouse = warehouseService.getById(id);
+        if (warehouse == null) {
+            return Result.error("仓库不存在");
+        }
+        if (warehouse.getStatus() == 1) {
+            return Result.error("只能删除停用状态的仓库");
+        }
         boolean deleted = warehouseService.removeById(id);
         if (deleted) {
             return Result.success("仓库删除成功");
         }
         return Result.error("仓库删除失败");
+    }
+
+    /**
+     * 切换仓库状态
+     */
+    @Log(value = "切换仓库状态", module = "仓库管理")
+    @PostMapping("/{id}/toggle-status")
+    @RequireRole({"admin", "warehouse_keeper"})
+    public Result toggleStatus(@PathVariable Long id) {
+        Warehouse warehouse = warehouseService.getById(id);
+        if (warehouse == null) {
+            return Result.error("仓库不存在");
+        }
+        int newStatus = warehouse.getStatus() == 1 ? 0 : 1;
+        if (newStatus == 0) {
+            QueryWrapper<Inventory> invWrapper = new QueryWrapper<>();
+            invWrapper.eq("warehouse_id", id).gt("quantity", 0);
+            long count = inventoryService.count(invWrapper);
+            if (count > 0) {
+                return Result.error("该仓库有库存，不能停用");
+            }
+        }
+        warehouse.setStatus(newStatus);
+        warehouseService.updateById(warehouse);
+        return Result.success(newStatus == 1 ? "已启用" : "已停用");
     }
 
     /**

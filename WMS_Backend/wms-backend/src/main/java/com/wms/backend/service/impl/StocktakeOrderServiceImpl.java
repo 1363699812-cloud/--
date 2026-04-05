@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.wms.backend.utils.OrderNoUtil;
 import java.util.List;
 
 @Service
@@ -30,21 +31,34 @@ public class StocktakeOrderServiceImpl extends ServiceImpl<StocktakeOrderMapper,
     @Override
     @Transactional
     public boolean createStocktakeOrder(StocktakeOrder order, List<StocktakeItem> items) {
+        order.setOrderNo(OrderNoUtil.generate("PD"));
         order.setStatus(0);
         boolean saved = this.save(order);
         if (!saved) return false;
 
-        for (StocktakeItem item : items) {
-            item.setOrderId(order.getId());
-            // 自动填充系统数量
-            Inventory inventory = inventoryService.getByWarehouseAndMaterial(
-                    order.getWarehouseId(), item.getMaterialId());
-            item.setSystemQuantity(inventory != null ? inventory.getQuantity() : 0);
-            // 差异 = 实盘 - 系统
-            if (item.getActualQuantity() != null) {
-                item.setDiffQuantity(item.getActualQuantity() - item.getSystemQuantity());
+        // 若前端未传明细，自动从库存表加载该仓库所有物资
+        if (items == null || items.isEmpty()) {
+            QueryWrapper<Inventory> invWrapper = new QueryWrapper<>();
+            invWrapper.eq("warehouse_id", order.getWarehouseId());
+            List<Inventory> inventories = inventoryService.list(invWrapper);
+            for (Inventory inv : inventories) {
+                StocktakeItem item = new StocktakeItem();
+                item.setOrderId(order.getId());
+                item.setMaterialId(inv.getMaterialId());
+                item.setSystemQuantity(inv.getQuantity());
+                stocktakeItemMapper.insert(item);
             }
-            stocktakeItemMapper.insert(item);
+        } else {
+            for (StocktakeItem item : items) {
+                item.setOrderId(order.getId());
+                Inventory inventory = inventoryService.getByWarehouseAndMaterial(
+                        order.getWarehouseId(), item.getMaterialId());
+                item.setSystemQuantity(inventory != null ? inventory.getQuantity() : 0);
+                if (item.getActualQuantity() != null) {
+                    item.setDiffQuantity(item.getActualQuantity() - item.getSystemQuantity());
+                }
+                stocktakeItemMapper.insert(item);
+            }
         }
         return true;
     }

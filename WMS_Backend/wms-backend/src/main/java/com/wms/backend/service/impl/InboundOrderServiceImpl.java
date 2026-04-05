@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.wms.backend.utils.OrderNoUtil;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -34,6 +35,10 @@ public class InboundOrderServiceImpl extends ServiceImpl<InboundOrderMapper, Inb
     @Override
     @Transactional
     public boolean createInboundOrder(InboundOrder order, List<InboundItem> items) {
+        // 0. 生成单据编号
+        order.setOrderNo(OrderNoUtil.generate("RK"));
+        order.setStatus(0);
+
         // 1. 计算总金额
         BigDecimal totalAmount = items.stream()
                 .map(item -> item.getAmount())
@@ -49,6 +54,9 @@ public class InboundOrderServiceImpl extends ServiceImpl<InboundOrderMapper, Inb
         // 3. 保存入库明细
         for (InboundItem item : items) {
             item.setOrderId(order.getId());
+            if (item.getBatchNumber() == null || item.getBatchNumber().isEmpty()) {
+                item.setBatchNumber(OrderNoUtil.generate("PC"));
+            }
             inboundItemMapper.insert(item);
         }
 
@@ -63,7 +71,32 @@ public class InboundOrderServiceImpl extends ServiceImpl<InboundOrderMapper, Inb
             return false;
         }
 
+        // 审核时校验仓库容量
+        Warehouse warehouse = warehouseService.getById(order.getWarehouseId());
+        if (warehouse != null && warehouse.getCapacity() != null && warehouse.getCapacity() > 0) {
+            Integer currentTotal = inventoryService.getTotalQuantityByWarehouseId(order.getWarehouseId());
+            QueryWrapper<InboundItem> itemWrapper = new QueryWrapper<>();
+            itemWrapper.eq("order_id", orderId);
+            List<InboundItem> items = inboundItemMapper.selectList(itemWrapper);
+            int inboundTotal = items.stream().mapToInt(InboundItem::getQuantity).sum();
+            if (currentTotal + inboundTotal > warehouse.getCapacity()) {
+                throw new RuntimeException("审核失败：仓库【" + warehouse.getName() + "】容量不足，当前库存" + currentTotal
+                        + "，入库数量" + inboundTotal + "，容量上限" + warehouse.getCapacity());
+            }
+        }
+
         order.setStatus(1); // 1-已审核
+        return this.updateById(order);
+    }
+
+    @Override
+    @Transactional
+    public boolean rejectInboundOrder(Long orderId) {
+        InboundOrder order = this.getById(orderId);
+        if (order == null || order.getStatus() != 0) {
+            return false;
+        }
+        order.setStatus(-1);
         return this.updateById(order);
     }
 

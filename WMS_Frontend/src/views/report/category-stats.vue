@@ -65,7 +65,7 @@ const renderCharts = () => {
 
   barChart.setOption({
     tooltip: { trigger: 'axis' },
-    grid: { left: 60, right: 30, top: 20, bottom: 40 },
+    grid: { left: 60, right: 30, top: 40, bottom: 40 },
     xAxis: { type: 'category', data: names, axisLabel: { rotate: 30 } },
     yAxis: { type: 'value', name: '库存总量' },
     series: [{ type: 'bar', data: barData, itemStyle: { color: '#409eff' } }],

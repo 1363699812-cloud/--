@@ -3,12 +3,12 @@
     <el-card class="search-card">
       <el-form :inline="true" :model="query">
         <el-form-item label="仓库">
-          <el-select v-model="query.warehouseId" placeholder="全部" clearable>
+          <el-select v-model="query.warehouseId" placeholder="全部" clearable style="width: 200px;">
             <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="物资">
-          <el-select v-model="query.materialId" placeholder="全部" clearable filterable>
+          <el-select v-model="query.materialId" placeholder="全部" clearable filterable style="width: 240px;">
             <el-option v-for="m in materials" :key="m.id" :label="`${m.code} - ${m.name}`" :value="m.id" />
           </el-select>
         </el-form-item>

@@ -9,4 +9,6 @@ public interface ITransferOrderService extends IService<TransferOrder> {
     boolean createTransferOrder(TransferOrder order, List<TransferItem> items);
     boolean auditTransferOrder(Long orderId);
     boolean completeTransferOrder(Long orderId);
+
+    boolean rejectTransferOrder(Long orderId);
 }

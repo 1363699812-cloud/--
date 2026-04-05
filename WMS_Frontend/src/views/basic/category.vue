@@ -25,17 +25,17 @@
             <span v-else style="color: #999;">无</span>
           </template>
         </el-table-column>
-        <el-table-column prop="sortOrder" label="排序" width="80" />
         <el-table-column prop="description" label="描述" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" width="80" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'">{{ row.status === 1 ? '启用' : '停用' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDialog(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row.id)">删除</el-button>
+            <el-button link :type="row.status === 1 ? 'warning' : 'success'" @click="handleToggleStatus(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-button>
+            <el-button link type="danger" v-if="row.status === 0" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -63,9 +63,6 @@
           <el-select v-model="form.parentId" placeholder="无" clearable style="width: 100%;">
             <el-option v-for="c in allCategories" :key="c.id" :label="c.name" :value="c.id" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="排序">
-          <el-input-number v-model="form.sortOrder" :min="0" style="width: 100%;" />
         </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="form.description" type="textarea" :rows="3" />
@@ -99,7 +96,7 @@ const total = ref(0)
 const allCategories = ref([])
 
 const query = reactive({ name: '', current: 1, size: 10 })
-const form = reactive({ id: null, code: '', name: '', parentId: null, sortOrder: 0, description: '', status: 1 })
+const form = reactive({ id: null, code: '', name: '', parentId: null, description: '', status: 1 })
 
 const rules = {
   code: [{ required: true, message: '请输入分类编码', trigger: 'blur' }],
@@ -126,7 +123,7 @@ const resetQuery = () => { Object.assign(query, { name: '', current: 1 }); loadD
 
 const openDialog = (row) => {
   if (row) Object.assign(form, { ...row })
-  else Object.assign(form, { id: null, code: '', name: '', parentId: null, sortOrder: 0, description: '', status: 1 })
+  else Object.assign(form, { id: null, code: '', name: '', parentId: null, description: '', status: 1 })
   loadAllCategories()
   dialogVisible.value = true
 }
@@ -147,6 +144,12 @@ const handleDelete = (id) => {
     const res = await deleteCategory(id)
     if (res.code === 200) { ElMessage.success('删除成功'); loadData() }
   }).catch(() => {})
+}
+
+const handleToggleStatus = async (row) => {
+  const newStatus = row.status === 1 ? 0 : 1
+  const res = await updateCategory(row.id, { status: newStatus })
+  if (res.code === 200) { ElMessage.success(newStatus === 1 ? '已启用' : '已停用'); loadData() }
 }
 
 onMounted(async () => {

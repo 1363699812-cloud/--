@@ -28,10 +28,11 @@
             <el-tag :type="row.status === 1 ? 'success' : 'danger'">{{ row.status === 1 ? '启用' : '停用' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDialog(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row.id)">删除</el-button>
+            <el-button link :type="row.status === 1 ? 'warning' : 'success'" @click="handleToggleStatus(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-button>
+            <el-button link type="danger" v-if="row.status === 0" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -123,6 +124,12 @@ const handleDelete = (id) => {
     const res = await deleteCustomer(id)
     if (res.code === 200) { ElMessage.success('删除成功'); loadData() }
   }).catch(() => {})
+}
+
+const handleToggleStatus = async (row) => {
+  const newStatus = row.status === 1 ? 0 : 1
+  const res = await updateCustomer(row.id, { status: newStatus })
+  if (res.code === 200) { ElMessage.success(newStatus === 1 ? '已启用' : '已停用'); loadData() }
 }
 
 onMounted(() => loadData())

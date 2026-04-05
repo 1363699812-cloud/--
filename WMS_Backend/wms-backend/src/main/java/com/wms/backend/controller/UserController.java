@@ -85,6 +85,7 @@ public class UserController {
      * 获取用户列表（分页）
      */
     @GetMapping("/list")
+    @RequireRole({"admin"})
     public Result list(@RequestParam(defaultValue = "1") Integer current,
                        @RequestParam(defaultValue = "10") Integer size,
                        @RequestParam(required = false) String username,
@@ -144,6 +145,7 @@ public class UserController {
      * 更新用户信息
      */
     @PutMapping("/{id}")
+    @RequireRole({"admin"})
     public Result updateUser(@PathVariable Long id, @RequestBody User user) {
         user.setId(id);
 
@@ -165,6 +167,7 @@ public class UserController {
      * 删除用户
      */
     @DeleteMapping("/{id}")
+    @RequireRole({"admin"})
     public Result deleteUser(@PathVariable Long id) {
         boolean deleted = userService.removeById(id);
         if (deleted) {
@@ -177,6 +180,7 @@ public class UserController {
      * 批量删除用户
      */
     @DeleteMapping("/batch")
+    @RequireRole({"admin"})
     public Result deleteBatch(@RequestBody List<Long> ids) {
         boolean deleted = userService.removeBatchByIds(ids);
         if (deleted) {

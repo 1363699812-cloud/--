@@ -9,7 +9,8 @@
           <el-select v-model="query.role" placeholder="全部" clearable>
             <el-option label="管理员" value="admin" />
             <el-option label="仓库管理员" value="warehouse_keeper" />
-            <el-option label="采购/销售" value="purchaser_seller" />
+            <el-option label="采购员" value="purchaser" />
+            <el-option label="销售员" value="seller" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -79,7 +80,8 @@
           <el-select v-model="form.role" style="width: 100%;">
             <el-option label="管理员" value="admin" />
             <el-option label="仓库管理员" value="warehouse_keeper" />
-            <el-option label="采购/销售" value="purchaser_seller" />
+            <el-option label="采购员" value="purchaser" />
+            <el-option label="销售员" value="seller" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
@@ -105,7 +107,8 @@ import { getUserList, saveUser, updateUser, deleteUser } from '@/api'
 const roleMap = {
   admin: { label: '管理员', type: 'danger' },
   warehouse_keeper: { label: '仓库管理员', type: '' },
-  purchaser_seller: { label: '采购/销售', type: 'success' },
+  purchaser: { label: '采购员', type: 'success' },
+  seller: { label: '销售员', type: 'warning' },
 }
 
 const loading = ref(false)

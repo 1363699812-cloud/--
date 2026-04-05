@@ -6,14 +6,15 @@
           <el-input v-model="query.orderNo" placeholder="请输入单据编号" clearable @keyup.enter="handleSearch" />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="query.status" placeholder="全部" clearable>
+          <el-select v-model="query.status" placeholder="全部" clearable style="width: 130px;">
             <el-option label="待审核" :value="0" />
             <el-option label="已审核" :value="1" />
             <el-option label="已完成" :value="2" />
+            <el-option label="已驳回" :value="-1" />
           </el-select>
         </el-form-item>
         <el-form-item label="供应商">
-          <el-select v-model="query.supplierId" placeholder="全部" clearable filterable>
+          <el-select v-model="query.supplierId" placeholder="全部" clearable filterable style="width: 200px;">
             <el-option v-for="s in suppliers" :key="s.id" :label="s.name" :value="s.id" />
           </el-select>
         </el-form-item>
@@ -46,12 +47,13 @@
         </el-table-column>
         <el-table-column prop="receiveDate" label="收货日期" width="120" />
         <el-table-column prop="createTime" label="创建时间" width="170" />
-        <el-table-column label="操作" width="240" fixed="right">
+        <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="viewDetail(row)">详情</el-button>
             <el-button link type="primary" v-if="row.status === 0" @click="openEditDialog(row)">编辑</el-button>
             <el-button link type="warning" v-if="row.status === 0" @click="handleAudit(row.id)">审核</el-button>
             <el-button link type="success" v-if="row.status === 1" @click="handleComplete(row.id)">入库</el-button>
+            <el-button link type="danger" v-if="row.status === 0" @click="handleReject(row.id)">驳回</el-button>
             <el-button link type="danger" v-if="row.status === 0" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
@@ -115,8 +117,8 @@
           <el-table-column label="金额" width="100">
             <template #default="{ row }">{{ ((row.quantity || 0) * (row.unitPrice || 0)).toFixed(2) }}</template>
           </el-table-column>
-          <el-table-column label="批次号" width="130">
-            <template #default="{ row }"><el-input v-model="row.batchNumber" size="small" /></template>
+          <el-table-column label="批次号" width="160">
+            <template #default="{ row }"><el-input v-model="row.batchNumber" size="small" placeholder="留空自动生成" /></template>
           </el-table-column>
           <el-table-column label="操作" width="60" align="center">
             <template #default="{ $index }">
@@ -165,11 +167,11 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  getInboundOrderList, createInboundOrder, updateInboundOrder, auditInboundOrder, completeInboundOrder,
+  getInboundOrderList, createInboundOrder, updateInboundOrder, auditInboundOrder, rejectInboundOrder, completeInboundOrder,
   deleteInboundOrder, getInboundItems, getAllWarehouses, getAllSuppliers, getAllMaterials
 } from '@/api'
 
-const statusMap = { 0: { label: '待审核', type: 'warning' }, 1: { label: '已审核', type: '' }, 2: { label: '已完成', type: 'success' } }
+const statusMap = { '-1': { label: '已驳回', type: 'danger' }, 0: { label: '待审核', type: 'warning' }, 1: { label: '已审核', type: '' }, 2: { label: '已完成', type: 'success' } }
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -260,6 +262,13 @@ const handleAudit = (id) => {
   ElMessageBox.confirm('确认审核通过该入库单吗', '提示', { type: 'warning' }).then(async () => {
     const res = await auditInboundOrder(id)
     if (res.code === 200) { ElMessage.success('审核成功'); loadData() }
+  }).catch(() => {})
+}
+
+const handleReject = (id) => {
+  ElMessageBox.confirm('确认驳回该入库单吗', '提示', { type: 'warning' }).then(async () => {
+    const res = await rejectInboundOrder(id)
+    if (res.code === 200) { ElMessage.success('已驳回'); loadData() }
   }).catch(() => {})
 }
 

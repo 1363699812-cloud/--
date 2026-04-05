@@ -4,6 +4,7 @@ package com.wms.backend.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.backend.annotation.Log;
+import com.wms.backend.annotation.RequireRole;
 import com.wms.backend.common.Result;
 import com.wms.backend.entity.Category;
 import com.wms.backend.service.ICategoryService;
@@ -36,6 +37,7 @@ public class CategoryController {
         if (description != null && !description.isEmpty()) {
             wrapper.like("description", description);
         }
+        wrapper.orderByDesc("status").orderByDesc("created_at");
 
         Page<Category> result = categoryService.page(page, wrapper);
         return Result.success(result);
@@ -46,7 +48,9 @@ public class CategoryController {
      */
     @GetMapping("/all")
     public Result getAllCategories() {
-        List<Category> categories = categoryService.list();
+        QueryWrapper<Category> wrapper = new QueryWrapper<>();
+        wrapper.eq("status", 1).orderByAsc("sort_order");
+        List<Category> categories = categoryService.list(wrapper);
         return Result.success(categories);
     }
 
@@ -67,6 +71,7 @@ public class CategoryController {
      */
     @Log(value = "创建分类", module = "分类管理")
     @PostMapping
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result createCategory(@RequestBody Category category) {
         // 检查分类名称是否已存在
         QueryWrapper<Category> wrapper = new QueryWrapper<>();
@@ -87,6 +92,7 @@ public class CategoryController {
      */
     @Log(value = "修改分类", module = "分类管理")
     @PutMapping("/{id}")
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result updateCategory(@PathVariable Long id, @RequestBody Category category) {
         category.setId(id);
 
@@ -109,7 +115,15 @@ public class CategoryController {
      */
     @Log(value = "删除分类", module = "分类管理")
     @DeleteMapping("/{id}")
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result deleteCategory(@PathVariable Long id) {
+        Category category = categoryService.getById(id);
+        if (category == null) {
+            return Result.error("分类不存在");
+        }
+        if (category.getStatus() == 1) {
+            return Result.error("只能删除停用状态的分类");
+        }
         boolean deleted = categoryService.removeById(id);
         if (deleted) {
             return Result.success("分类删除成功");

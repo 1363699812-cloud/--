@@ -16,7 +16,7 @@ public class User {
     private String realName;
     private String phone;
     private String email;
-    private String role; // 角色: admin-管理员, warehouse_keeper-仓库员, purchaser_seller-采购销售员
+    private String role; // 角色: admin-管理员, warehouse_keeper-仓库管理员, purchaser-采购员, seller-销售员
     private Integer status; // 1-启用 0-禁用
 
     @TableField(fill = FieldFill.INSERT)

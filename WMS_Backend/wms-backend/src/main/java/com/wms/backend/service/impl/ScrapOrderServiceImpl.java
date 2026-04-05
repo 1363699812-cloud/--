@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.wms.backend.utils.OrderNoUtil;
 import java.util.List;
 
 @Service
@@ -30,6 +31,7 @@ public class ScrapOrderServiceImpl extends ServiceImpl<ScrapOrderMapper, ScrapOr
     @Override
     @Transactional
     public boolean createScrapOrder(ScrapOrder order, List<ScrapItem> items) {
+        order.setOrderNo(OrderNoUtil.generate("BS"));
         order.setStatus(0);
         boolean saved = this.save(order);
         if (!saved) return false;
@@ -47,7 +49,26 @@ public class ScrapOrderServiceImpl extends ServiceImpl<ScrapOrderMapper, ScrapOr
         ScrapOrder order = this.getById(orderId);
         if (order == null || order.getStatus() != 0) return false;
 
+        // 检查库存是否充足
+        QueryWrapper<ScrapItem> wrapper = new QueryWrapper<>();
+        wrapper.eq("order_id", orderId);
+        List<ScrapItem> items = scrapItemMapper.selectList(wrapper);
+        for (ScrapItem item : items) {
+            if (!inventoryService.checkStockSufficient(order.getWarehouseId(), item.getMaterialId(), item.getQuantity())) {
+                throw new RuntimeException("库存不足，无法审核报损单，物资ID: " + item.getMaterialId());
+            }
+        }
+
         order.setStatus(1);
+        return this.updateById(order);
+    }
+
+    @Override
+    @Transactional
+    public boolean rejectScrapOrder(Long orderId) {
+        ScrapOrder order = this.getById(orderId);
+        if (order == null || order.getStatus() != 0) return false;
+        order.setStatus(-1);
         return this.updateById(order);
     }
 

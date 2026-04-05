@@ -3,7 +3,7 @@
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stat-row">
       <el-col :span="6" v-for="item in statCards" :key="item.label">
-        <el-card shadow="hover" class="stat-card">
+        <el-card shadow="hover" class="stat-card" :style="{ cursor: item.route ? 'pointer' : 'default' }" @click="item.route && $router.push(item.route)">
           <div class="stat-card-body">
             <div class="stat-info">
               <div class="stat-label">{{ item.label }}</div>
@@ -25,15 +25,15 @@
       <el-col :span="8">
         <el-card header="快捷信息">
           <div class="quick-info">
-            <div class="info-item">
+            <div class="info-item" style="cursor: pointer;" @click="$router.push('/inbound/order')">
               <span class="info-label">待审核入库单</span>
               <el-tag type="warning">{{ dashboard.pendingInbound || 0 }}</el-tag>
             </div>
-            <div class="info-item">
+            <div class="info-item" style="cursor: pointer;" @click="$router.push('/outbound/order')">
               <span class="info-label">待审核出库单</span>
               <el-tag type="warning">{{ dashboard.pendingOutbound || 0 }}</el-tag>
             </div>
-            <div class="info-item">
+            <div class="info-item" style="cursor: pointer;" @click="$router.push('/inventory/alert')">
               <span class="info-label">库存预警数</span>
               <el-tag type="danger">{{ dashboard.alertCount || 0 }}</el-tag>
             </div>
@@ -62,10 +62,10 @@ let trendChart = null
 const dashboard = reactive({})
 
 const statCards = ref([
-  { label: '物资总数', value: 0, icon: 'Box', color: '#409eff' },
-  { label: '仓库总数', value: 0, icon: 'House', color: '#67c23a' },
-  { label: '库存总量', value: 0, icon: 'Coin', color: '#e6a23c' },
-  { label: '预警数量', value: 0, icon: 'Bell', color: '#f56c6c' },
+  { label: '物资总数', value: 0, icon: 'Box', color: '#409eff', route: '/basic/material' },
+  { label: '仓库总数', value: 0, icon: 'House', color: '#67c23a', route: '/basic/warehouse' },
+  { label: '库存总量', value: 0, icon: 'Coin', color: '#e6a23c', route: '/inventory/list' },
+  { label: '预警数量', value: 0, icon: 'Bell', color: '#f56c6c', route: '/inventory/alert' },
 ])
 
 const loadData = async () => {

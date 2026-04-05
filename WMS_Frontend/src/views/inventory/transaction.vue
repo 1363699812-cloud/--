@@ -3,23 +3,28 @@
     <el-card class="search-card">
       <el-form :inline="true" :model="query">
         <el-form-item label="仓库">
-          <el-select v-model="query.warehouseId" placeholder="全部" clearable>
+          <el-select v-model="query.warehouseId" placeholder="全部" clearable style="width: 180px;">
             <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="物资">
-          <el-select v-model="query.materialId" placeholder="全部" clearable filterable>
+          <el-select v-model="query.materialId" placeholder="全部" clearable filterable style="width: 200px;">
             <el-option v-for="m in materials" :key="m.id" :label="`${m.code} - ${m.name}`" :value="m.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="变动类型">
-          <el-select v-model="query.changeType" placeholder="全部" clearable>
+          <el-select v-model="query.changeType" placeholder="全部" clearable style="width: 140px;">
             <el-option label="入库" value="IN" />
             <el-option label="出库" value="OUT" />
+            <el-option label="调拨入" value="TRANSFER_IN" />
+            <el-option label="调拨出" value="TRANSFER_OUT" />
+            <el-option label="报损" value="DAMAGE" />
+            <el-option label="报废" value="SCRAP" />
+            <el-option label="盘点" value="STOCKTAKE" />
           </el-select>
         </el-form-item>
         <el-form-item label="来源类型">
-          <el-select v-model="query.referenceType" placeholder="全部" clearable>
+          <el-select v-model="query.referenceType" placeholder="全部" clearable style="width: 140px;">
             <el-option label="入库" value="INBOUND" />
             <el-option label="出库" value="OUTBOUND" />
             <el-option label="调拨入" value="TRANSFER_IN" />
@@ -50,7 +55,7 @@
         </el-table-column>
         <el-table-column prop="changeType" label="变动类型" width="90" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.changeType === 'IN' ? 'success' : 'danger'">{{ row.changeType === 'IN' ? '入库' : '出库' }}</el-tag>
+            <el-tag :type="changeTypeMap[row.changeType]?.type || 'info'">{{ changeTypeMap[row.changeType]?.label || row.changeType }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="quantity" label="变动数量" width="100" align="right" />
@@ -82,6 +87,7 @@ import { getTransactionList, getAllWarehouses, getAllMaterials } from '@/api'
 
 const route = useRoute()
 const refTypeMap = { INBOUND: '入库', OUTBOUND: '出库', TRANSFER_IN: '调拨入', TRANSFER_OUT: '调拨出', DAMAGE: '报损', SCRAP: '报废', STOCKTAKE: '盘点' }
+const changeTypeMap = { IN: { label: '入库', type: 'success' }, OUT: { label: '出库', type: 'danger' }, TRANSFER_IN: { label: '调拨入', type: 'success' }, TRANSFER_OUT: { label: '调拨出', type: 'warning' }, DAMAGE: { label: '报损', type: 'danger' }, SCRAP: { label: '报废', type: 'danger' }, STOCKTAKE: { label: '盘点', type: 'info' } }
 
 const loading = ref(false)
 const tableData = ref([])

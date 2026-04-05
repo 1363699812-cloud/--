@@ -40,11 +40,12 @@
             <el-tag :type="row.status === 1 ? 'success' : 'danger'">{{ row.status === 1 ? '启用' : '停用' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDialog(row)">编辑</el-button>
+            <el-button link :type="row.status === 1 ? 'warning' : 'success'" @click="handleToggleStatus(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-button>
             <el-button link type="success" @click="viewInventory(row)">查看库存</el-button>
-            <el-button link type="danger" @click="handleDelete(row.id)">删除</el-button>
+            <el-button link type="danger" v-if="row.status === 0" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -84,9 +85,18 @@
         </el-row>
         <el-form-item label="规格"><el-input v-model="form.specification" /></el-form-item>
         <el-row :gutter="16">
-          <el-col :span="8"><el-form-item label="安全库存"><el-input-number v-model="form.safetyStock" :min="0" controls-position="right" style="width:100%;" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="最低库存"><el-input-number v-model="form.minStock" :min="0" controls-position="right" style="width:100%;" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="最高库存"><el-input-number v-model="form.maxStock" :min="0" controls-position="right" style="width:100%;" /></el-form-item></el-col>
+          <el-col :span="8"><el-form-item label="安全库存">
+            <el-input-number v-model="form.safetyStock" :min="0" controls-position="right" style="width:100%;" />
+            <div style="color: #909399; font-size: 12px; line-height: 1.4; margin-top: 2px;">低于此值触发预警</div>
+          </el-form-item></el-col>
+          <el-col :span="8"><el-form-item label="最低库存">
+            <el-input-number v-model="form.minStock" :min="0" controls-position="right" style="width:100%;" />
+            <div style="color: #909399; font-size: 12px; line-height: 1.4; margin-top: 2px;">库存下限</div>
+          </el-form-item></el-col>
+          <el-col :span="8"><el-form-item label="最高库存">
+            <el-input-number v-model="form.maxStock" :min="0" controls-position="right" style="width:100%;" />
+            <div style="color: #909399; font-size: 12px; line-height: 1.4; margin-top: 2px;">库存上限</div>
+          </el-form-item></el-col>
         </el-row>
         <el-form-item label="描述"><el-input v-model="form.description" type="textarea" :rows="3" /></el-form-item>
         <el-form-item label="状态">
@@ -211,6 +221,12 @@ const handleDelete = (id) => {
     const res = await deleteMaterial(id)
     if (res.code === 200) { ElMessage.success('删除成功'); loadData() }
   }).catch(() => {})
+}
+
+const handleToggleStatus = async (row) => {
+  const newStatus = row.status === 1 ? 0 : 1
+  const res = await updateMaterial(row.id, { status: newStatus })
+  if (res.code === 200) { ElMessage.success(newStatus === 1 ? '已启用' : '已停用'); loadData() }
 }
 
 onMounted(async () => {

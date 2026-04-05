@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.wms.backend.utils.OrderNoUtil;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -30,6 +31,10 @@ public class OutboundOrderServiceImpl extends ServiceImpl<OutboundOrderMapper, O
     @Override
     @Transactional
     public boolean createOutboundOrder(OutboundOrder order, List<OutboundItem> items) {
+        // 0. 生成单据编号
+        order.setOrderNo(OrderNoUtil.generate("CK"));
+        order.setStatus(0);
+
         // 1. 计算总金额
         BigDecimal totalAmount = items.stream()
                 .map(item -> item.getAmount())
@@ -45,6 +50,9 @@ public class OutboundOrderServiceImpl extends ServiceImpl<OutboundOrderMapper, O
         // 3. 保存出库明细
         for (OutboundItem item : items) {
             item.setOrderId(order.getId());
+            if (item.getBatchNumber() == null || item.getBatchNumber().isEmpty()) {
+                item.setBatchNumber(OrderNoUtil.generate("PC"));
+            }
             outboundItemMapper.insert(item);
         }
 
@@ -77,6 +85,17 @@ public class OutboundOrderServiceImpl extends ServiceImpl<OutboundOrderMapper, O
         }
 
         order.setStatus(1); // 1-已审核
+        return this.updateById(order);
+    }
+
+    @Override
+    @Transactional
+    public boolean rejectOutboundOrder(Long orderId) {
+        OutboundOrder order = this.getById(orderId);
+        if (order == null || order.getStatus() != 0) {
+            return false;
+        }
+        order.setStatus(-1);
         return this.updateById(order);
     }
 

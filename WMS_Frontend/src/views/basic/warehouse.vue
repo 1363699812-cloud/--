@@ -27,16 +27,17 @@
         <el-table-column prop="address" label="地址" show-overflow-tooltip />
         <el-table-column prop="contactPerson" label="联系人" width="100" />
         <el-table-column prop="phone" label="联系电话" width="130" />
-        <el-table-column prop="capacity" label="容量" width="80" />
+        <el-table-column prop="capacity" label="容量(件)" width="100" />
         <el-table-column prop="status" label="状态" width="80" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'active' ? 'success' : 'danger'">{{ row.status === 'active' ? '启用' : '停用' }}</el-tag>
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'">{{ row.status === 1 ? '启用' : '停用' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDialog(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row.id)">删除</el-button>
+            <el-button link :type="row.status === 1 ? 'warning' : 'success'" @click="handleToggleStatus(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-button>
+            <el-button link type="danger" v-if="row.status === 0" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -70,16 +71,17 @@
         <el-form-item label="联系电话">
           <el-input v-model="form.phone" placeholder="请输入联系电话" />
         </el-form-item>
-        <el-form-item label="容量" prop="capacity">
+        <el-form-item label="容量(件)" prop="capacity">
           <el-input-number v-model="form.capacity" :min="1" style="width: 100%;" />
+          <div style="color: #909399; font-size: 12px; line-height: 1.4; margin-top: 4px;">该仓库可存储物资总件数上限</div>
         </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="form.description" type="textarea" :rows="3" />
         </el-form-item>
         <el-form-item label="状态">
           <el-radio-group v-model="form.status">
-            <el-radio value="active">启用</el-radio>
-            <el-radio value="inactive">停用</el-radio>
+            <el-radio :value="1">启用</el-radio>
+            <el-radio :value="0">停用</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
@@ -94,7 +96,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getWarehouseList, saveWarehouse, updateWarehouse, deleteWarehouse } from '@/api'
+import { getWarehouseList, saveWarehouse, updateWarehouse, deleteWarehouse, toggleWarehouseStatus } from '@/api'
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -104,7 +106,7 @@ const tableData = ref([])
 const total = ref(0)
 
 const query = reactive({ name: '', code: '', current: 1, size: 10 })
-const form = reactive({ id: null, code: '', name: '', address: '', contactPerson: '', phone: '', capacity: 0, description: '', status: 'active' })
+const form = reactive({ id: null, code: '', name: '', address: '', contactPerson: '', phone: '', capacity: 0, description: '', status: 1 })
 
 const rules = {
   code: [{ required: true, message: '请输入仓库编码', trigger: 'blur' }],
@@ -132,7 +134,7 @@ const openDialog = (row) => {
   if (row) {
     Object.assign(form, { ...row })
   } else {
-    Object.assign(form, { id: null, code: '', name: '', address: '', contactPerson: '', phone: '', capacity: 1, description: '', status: 'active' })
+    Object.assign(form, { id: null, code: '', name: '', address: '', contactPerson: '', phone: '', capacity: 1, description: '', status: 1 })
   }
   dialogVisible.value = true
 }
@@ -159,6 +161,12 @@ const handleDelete = (id) => {
     const res = await deleteWarehouse(id)
     if (res.code === 200) { ElMessage.success('删除成功'); loadData() }
   }).catch(() => {})
+}
+
+const handleToggleStatus = async (row) => {
+  const res = await toggleWarehouseStatus(row.id)
+  if (res.code === 200) { ElMessage.success(res.data || '操作成功'); loadData() }
+  else { ElMessage.error(res.message || '操作失败') }
 }
 
 onMounted(() => loadData())

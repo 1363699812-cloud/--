@@ -28,4 +28,6 @@ public interface IOutboundOrderService extends IService<OutboundOrder> {
     boolean checkStockForOutbound(Long orderId);
 
     boolean updateOutboundOrder(Long orderId, OutboundOrder order, List<OutboundItem> items);
+
+    boolean rejectOutboundOrder(Long orderId);
 }

@@ -9,4 +9,6 @@ public interface IScrapOrderService extends IService<ScrapOrder> {
     boolean createScrapOrder(ScrapOrder order, List<ScrapItem> items);
     boolean auditScrapOrder(Long orderId);
     boolean completeScrapOrder(Long orderId);
+
+    boolean rejectScrapOrder(Long orderId);
 }

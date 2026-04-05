@@ -4,6 +4,7 @@ package com.wms.backend.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.backend.annotation.Log;
+import com.wms.backend.annotation.RequireRole;
 import com.wms.backend.common.Result;
 import com.wms.backend.entity.Material;
 import com.wms.backend.service.IMaterialService;
@@ -30,7 +31,7 @@ public class MaterialController {
         if (name != null && !name.isEmpty()) wrapper.like("name", name);
         if (code != null && !code.isEmpty()) wrapper.like("code", code);
         if (categoryId != null) wrapper.eq("category_id", categoryId);
-        wrapper.orderByDesc("create_time");
+        wrapper.orderByDesc("status").orderByDesc("create_time");
         return Result.success(materialService.page(page, wrapper));
     }
 
@@ -48,12 +49,14 @@ public class MaterialController {
 
     @Log(value = "新增物资", module = "物资管理")
     @PostMapping
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result save(@RequestBody Material material) {
         return materialService.save(material) ? Result.success("创建成功") : Result.error("创建失败");
     }
 
     @Log(value = "修改物资", module = "物资管理")
     @PutMapping("/{id}")
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result update(@PathVariable Long id, @RequestBody Material material) {
         material.setId(id);
         return materialService.updateById(material) ? Result.success("更新成功") : Result.error("更新失败");
@@ -61,7 +64,15 @@ public class MaterialController {
 
     @Log(value = "删除物资", module = "物资管理")
     @DeleteMapping("/{id}")
+    @RequireRole({"admin", "warehouse_keeper"})
     public Result delete(@PathVariable Long id) {
+        Material material = materialService.getById(id);
+        if (material == null) {
+            return Result.error("物资不存在");
+        }
+        if (material.getStatus() == 1) {
+            return Result.error("只能删除停用状态的物资");
+        }
         return materialService.removeById(id) ? Result.success("删除成功") : Result.error("删除失败");
     }
 }
