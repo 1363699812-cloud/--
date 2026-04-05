@@ -19,7 +19,12 @@
       <el-table :data="tableData" v-loading="loading" stripe border>
         <el-table-column prop="code" label="分类编码" width="120" />
         <el-table-column prop="name" label="分类名称" width="180" />
-        <el-table-column prop="parentId" label="父分类ID" width="100" />
+        <el-table-column prop="parentId" label="父分类" width="140">
+          <template #default="{ row }">
+            <span v-if="row.parentId">{{ getParentName(row.parentId) }}</span>
+            <span v-else style="color: #999;">无</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="sortOrder" label="排序" width="80" />
         <el-table-column prop="description" label="描述" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" width="80" align="center">
@@ -101,6 +106,8 @@ const rules = {
   name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
 }
 
+const getParentName = (id) => allCategories.value.find((c) => c.id === id)?.name || id
+
 const loadData = async () => {
   loading.value = true
   try {
@@ -142,7 +149,10 @@ const handleDelete = (id) => {
   }).catch(() => {})
 }
 
-onMounted(() => loadData())
+onMounted(async () => {
+  await loadAllCategories()
+  loadData()
+})
 </script>
 
 <style scoped>

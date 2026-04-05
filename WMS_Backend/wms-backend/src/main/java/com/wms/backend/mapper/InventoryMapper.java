@@ -21,4 +21,7 @@ public interface InventoryMapper extends BaseMapper<Inventory> {
             "LEFT JOIN warehouse w ON i.warehouse_id = w.id " +
             "WHERE i.quantity < m.safety_stock OR i.quantity > m.max_stock")
     List<Map<String, Object>> selectStockAlerts();
+
+    @Select("SELECT COALESCE(SUM(quantity), 0) FROM inventory WHERE warehouse_id = #{warehouseId}")
+    Integer selectTotalQuantityByWarehouseId(Long warehouseId);
 }

@@ -101,13 +101,15 @@ const renderTrendChart = (trends) => {
   })
 }
 
+const handleResize = () => trendChart?.resize()
+
 onMounted(() => {
   loadData()
-  window.addEventListener('resize', () => trendChart?.resize())
+  window.addEventListener('resize', handleResize)
 })
 onBeforeUnmount(() => {
   trendChart?.dispose()
-  window.removeEventListener('resize', () => trendChart?.resize())
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 

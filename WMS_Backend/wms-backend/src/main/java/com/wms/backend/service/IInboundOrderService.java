@@ -21,4 +21,6 @@ public interface IInboundOrderService extends IService<InboundOrder> {
      * 完成入库单（更新库存）
      */
     boolean completeInboundOrder(Long orderId);
+
+    boolean updateInboundOrder(Long orderId, InboundOrder order, List<InboundItem> items);
 }

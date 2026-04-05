@@ -64,6 +64,18 @@ public class OutboundOrderServiceImpl extends ServiceImpl<OutboundOrderMapper, O
             throw new RuntimeException("库存不足，无法审核出库单");
         }
 
+        // 锁定库存
+        QueryWrapper<OutboundItem> itemWrapper = new QueryWrapper<>();
+        itemWrapper.eq("order_id", orderId);
+        List<OutboundItem> items = outboundItemMapper.selectList(itemWrapper);
+        for (OutboundItem item : items) {
+            boolean locked = inventoryService.lockQuantity(
+                    order.getWarehouseId(), item.getMaterialId(), item.getQuantity());
+            if (!locked) {
+                throw new RuntimeException("锁定库存失败，物资ID: " + item.getMaterialId());
+            }
+        }
+
         order.setStatus(1); // 1-已审核
         return this.updateById(order);
     }
@@ -83,6 +95,10 @@ public class OutboundOrderServiceImpl extends ServiceImpl<OutboundOrderMapper, O
 
         // 扣减库存
         for (OutboundItem item : items) {
+            // 先释放锁定
+            inventoryService.unlockQuantity(
+                    order.getWarehouseId(), item.getMaterialId(), item.getQuantity());
+
             boolean success = inventoryService.decreaseQuantity(
                     order.getWarehouseId(),
                     item.getMaterialId(),
@@ -130,6 +146,34 @@ public class OutboundOrderServiceImpl extends ServiceImpl<OutboundOrderMapper, O
             if (!sufficient) {
                 return false;
             }
+        }
+
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean updateOutboundOrder(Long orderId, OutboundOrder order, List<OutboundItem> items) {
+        OutboundOrder existing = this.getById(orderId);
+        if (existing == null || existing.getStatus() != 0) {
+            throw new RuntimeException("只能编辑待审核的出库单");
+        }
+
+        order.setId(orderId);
+        BigDecimal totalAmount = items.stream()
+                .map(OutboundItem::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        order.setTotalAmount(totalAmount);
+        this.updateById(order);
+
+        QueryWrapper<OutboundItem> delWrapper = new QueryWrapper<>();
+        delWrapper.eq("order_id", orderId);
+        outboundItemMapper.delete(delWrapper);
+
+        for (OutboundItem item : items) {
+            item.setId(null);
+            item.setOrderId(orderId);
+            outboundItemMapper.insert(item);
         }
 
         return true;

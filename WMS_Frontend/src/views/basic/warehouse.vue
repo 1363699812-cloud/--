@@ -70,8 +70,8 @@
         <el-form-item label="联系电话">
           <el-input v-model="form.phone" placeholder="请输入联系电话" />
         </el-form-item>
-        <el-form-item label="容量">
-          <el-input-number v-model="form.capacity" :min="0" style="width: 100%;" />
+        <el-form-item label="容量" prop="capacity">
+          <el-input-number v-model="form.capacity" :min="1" style="width: 100%;" />
         </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="form.description" type="textarea" :rows="3" />
@@ -109,6 +109,7 @@ const form = reactive({ id: null, code: '', name: '', address: '', contactPerson
 const rules = {
   code: [{ required: true, message: '请输入仓库编码', trigger: 'blur' }],
   name: [{ required: true, message: '请输入仓库名称', trigger: 'blur' }],
+  capacity: [{ required: true, message: '请输入仓库容量', trigger: 'blur' }],
 }
 
 const loadData = async () => {
@@ -131,7 +132,7 @@ const openDialog = (row) => {
   if (row) {
     Object.assign(form, { ...row })
   } else {
-    Object.assign(form, { id: null, code: '', name: '', address: '', contactPerson: '', phone: '', capacity: 0, description: '', status: 'active' })
+    Object.assign(form, { id: null, code: '', name: '', address: '', contactPerson: '', phone: '', capacity: 1, description: '', status: 'active' })
   }
   dialogVisible.value = true
 }

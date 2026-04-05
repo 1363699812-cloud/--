@@ -117,8 +117,8 @@ const resetQuery = () => {
 
 onMounted(async () => {
   const [w, m] = await Promise.all([getAllWarehouses(), getAllMaterials()])
-  if (w.data.code === 200) warehouses.value = w.data.data
-  if (m.data.code === 200) materials.value = m.data.data
+  if (w.code === 200) warehouses.value = w.data
+  if (m.code === 200) materials.value = m.data
   // 从库存详情跳转过来时, 自动填充筛选条件
   if (route.query.warehouseId) query.warehouseId = Number(route.query.warehouseId)
   if (route.query.materialId) query.materialId = Number(route.query.materialId)

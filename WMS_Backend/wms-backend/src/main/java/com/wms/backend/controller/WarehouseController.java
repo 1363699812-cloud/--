@@ -68,6 +68,11 @@ public class WarehouseController {
     @Log(value = "创建仓库", module = "仓库管理")
     @PostMapping
     public Result createWarehouse(@RequestBody Warehouse warehouse) {
+        // 校验仓库容量
+        if (warehouse.getCapacity() == null || warehouse.getCapacity() < 1) {
+            return Result.error("仓库容量不能小于1");
+        }
+
         // 检查仓库名称是否已存在
         QueryWrapper<Warehouse> wrapper = new QueryWrapper<>();
         wrapper.eq("name", warehouse.getName());
@@ -89,6 +94,11 @@ public class WarehouseController {
     @PutMapping("/{id}")
     public Result updateWarehouse(@PathVariable Long id, @RequestBody Warehouse warehouse) {
         warehouse.setId(id);
+
+        // 校验仓库容量
+        if (warehouse.getCapacity() == null || warehouse.getCapacity() < 1) {
+            return Result.error("仓库容量不能小于1");
+        }
 
         // 检查仓库名称是否与其他仓库冲突
         QueryWrapper<Warehouse> wrapper = new QueryWrapper<>();

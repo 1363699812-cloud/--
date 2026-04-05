@@ -78,9 +78,13 @@ public class InboundOrderController {
 
     @Log(value = "修改入库单", module = "入库管理")
     @PutMapping("/{id}")
-    public Result update(@PathVariable Long id, @RequestBody InboundOrder order) {
-        order.setId(id);
-        return inboundOrderService.updateById(order) ? Result.success("更新成功") : Result.error("更新失败");
+    public Result update(@PathVariable Long id, @RequestBody CreateInboundOrderRequest request) {
+        try {
+            boolean result = inboundOrderService.updateInboundOrder(id, request.getOrder(), request.getItems());
+            return result ? Result.success("更新成功") : Result.error("更新失败");
+        } catch (RuntimeException e) {
+            return Result.error(e.getMessage());
+        }
     }
 
     @Log(value = "删除入库单", module = "入库管理")

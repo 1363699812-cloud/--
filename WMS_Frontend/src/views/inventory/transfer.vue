@@ -66,14 +66,14 @@
           <el-col :span="12">
             <el-form-item label="调出仓库" prop="fromWarehouseId">
               <el-select v-model="form.fromWarehouseId" placeholder="请选择" style="width:100%;">
-                <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
+                <el-option v-for="w in fromWarehouseOptions" :key="w.id" :label="w.name" :value="w.id" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="调入仓库" prop="toWarehouseId">
               <el-select v-model="form.toWarehouseId" placeholder="请选择" style="width:100%;">
-                <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
+                <el-option v-for="w in toWarehouseOptions" :key="w.id" :label="w.name" :value="w.id" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -127,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   getTransferOrderList, createTransferOrder, auditTransferOrder, completeTransferOrder,
@@ -158,6 +158,9 @@ const rules = {
 
 const getWarehouseName = (id) => warehouses.value.find((w) => w.id === id)?.name || id
 const getMaterialName = (id) => materials.value.find((m) => m.id === id)?.name || id
+
+const fromWarehouseOptions = computed(() => warehouses.value.filter(w => w.id !== form.toWarehouseId))
+const toWarehouseOptions = computed(() => warehouses.value.filter(w => w.id !== form.fromWarehouseId))
 
 const loadData = async () => {
   loading.value = true
@@ -218,8 +221,8 @@ const handleDelete = (id) => {
 
 onMounted(async () => {
   const [w, m] = await Promise.all([getAllWarehouses(), getAllMaterials()])
-  if (w.data.code === 200) warehouses.value = w.data.data
-  if (m.data.code === 200) materials.value = m.data.data
+  if (w.code === 200) warehouses.value = w.data
+  if (m.code === 200) materials.value = m.data
   loadData()
 })
 </script>

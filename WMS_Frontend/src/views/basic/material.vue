@@ -40,9 +40,10 @@
             <el-tag :type="row.status === 1 ? 'success' : 'danger'">{{ row.status === 1 ? '启用' : '停用' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDialog(row)">编辑</el-button>
+            <el-button link type="success" @click="viewInventory(row)">查看库存</el-button>
             <el-button link type="danger" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
@@ -59,7 +60,7 @@
       />
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑物资' : '新增物资'" width="600px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑物资' : '新增物资'" width="720px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-row :gutter="16">
           <el-col :span="12">
@@ -83,9 +84,9 @@
         </el-row>
         <el-form-item label="规格"><el-input v-model="form.specification" /></el-form-item>
         <el-row :gutter="16">
-          <el-col :span="8"><el-form-item label="安全库存"><el-input-number v-model="form.safetyStock" :min="0" style="width:100%;" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="最低库存"><el-input-number v-model="form.minStock" :min="0" style="width:100%;" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="最高库存"><el-input-number v-model="form.maxStock" :min="0" style="width:100%;" /></el-form-item></el-col>
+          <el-col :span="8"><el-form-item label="安全库存"><el-input-number v-model="form.safetyStock" :min="0" controls-position="right" style="width:100%;" /></el-form-item></el-col>
+          <el-col :span="8"><el-form-item label="最低库存"><el-input-number v-model="form.minStock" :min="0" controls-position="right" style="width:100%;" /></el-form-item></el-col>
+          <el-col :span="8"><el-form-item label="最高库存"><el-input-number v-model="form.maxStock" :min="0" controls-position="right" style="width:100%;" /></el-form-item></el-col>
         </el-row>
         <el-form-item label="描述"><el-input v-model="form.description" type="textarea" :rows="3" /></el-form-item>
         <el-form-item label="状态">
@@ -100,21 +101,45 @@
         <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 查看库存弹窗 -->
+    <el-dialog v-model="inventoryVisible" title="物资库存分布" width="650px" destroy-on-close>
+      <el-descriptions :column="2" border size="small" style="margin-bottom: 16px;">
+        <el-descriptions-item label="物资编码">{{ currentMaterial.code }}</el-descriptions-item>
+        <el-descriptions-item label="物资名称">{{ currentMaterial.name }}</el-descriptions-item>
+      </el-descriptions>
+      <el-table :data="inventoryData" v-loading="inventoryLoading" border size="small">
+        <el-table-column prop="warehouseName" label="仓库" />
+        <el-table-column prop="quantity" label="当前库存" width="100" />
+        <el-table-column prop="lockQuantity" label="锁定数量" width="100" />
+        <el-table-column label="可用库存" width="100">
+          <template #default="{ row }">{{ row.quantity - (row.lockQuantity || 0) }}</template>
+        </el-table-column>
+      </el-table>
+      <div v-if="inventoryData.length === 0 && !inventoryLoading" style="text-align: center; padding: 20px; color: #999;">
+        该物资暂无库存记录
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMaterialList, saveMaterial, updateMaterial, deleteMaterial, getAllCategories } from '@/api'
+import { getMaterialList, saveMaterial, updateMaterial, deleteMaterial, getAllCategories, getInventoryList, getAllWarehouses } from '@/api'
 
 const loading = ref(false)
 const submitting = ref(false)
 const dialogVisible = ref(false)
+const inventoryVisible = ref(false)
+const inventoryLoading = ref(false)
 const formRef = ref()
 const tableData = ref([])
 const total = ref(0)
 const categories = ref([])
+const inventoryData = ref([])
+const currentMaterial = reactive({ code: '', name: '' })
+const warehouseMap = ref({})
 
 const query = reactive({ name: '', code: '', categoryId: null, current: 1, size: 10 })
 const form = reactive({ id: null, code: '', name: '', categoryId: null, unit: '', specification: '', safetyStock: 0, minStock: 0, maxStock: 0, description: '', status: 1 })
@@ -148,12 +173,37 @@ const openDialog = (row) => {
 const handleSubmit = () => {
   formRef.value.validate(async (valid) => {
     if (!valid) return
+    // 库存字段交叉验证
+    if (form.minStock > form.safetyStock) {
+      ElMessage.warning('最低库存不能大于安全库存')
+      return
+    }
+    if (form.safetyStock > form.maxStock) {
+      ElMessage.warning('安全库存不能大于最高库存')
+      return
+    }
     submitting.value = true
     try {
       const res = form.id ? await updateMaterial(form.id, form) : await saveMaterial(form)
       if (res.code === 200) { ElMessage.success(form.id ? '更新成功' : '新增成功'); dialogVisible.value = false; loadData() }
     } finally { submitting.value = false }
   })
+}
+
+const viewInventory = async (row) => {
+  currentMaterial.code = row.code
+  currentMaterial.name = row.name
+  inventoryVisible.value = true
+  inventoryLoading.value = true
+  try {
+    const res = await getInventoryList({ materialId: row.id, size: 100 })
+    if (res.code === 200) {
+      inventoryData.value = (res.data.records || []).map(item => ({
+        ...item,
+        warehouseName: warehouseMap.value[item.warehouseId] || item.warehouseId
+      }))
+    }
+  } finally { inventoryLoading.value = false }
 }
 
 const handleDelete = (id) => {
@@ -166,6 +216,10 @@ const handleDelete = (id) => {
 onMounted(async () => {
   const res = await getAllCategories()
   if (res.code === 200) categories.value = res.data
+  const wRes = await getAllWarehouses()
+  if (wRes.code === 200) {
+    wRes.data.forEach(w => { warehouseMap.value[w.id] = w.name })
+  }
   loadData()
 })
 </script>

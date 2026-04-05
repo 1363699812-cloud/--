@@ -72,11 +72,43 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
         }
 
         Inventory inventory = this.getByWarehouseAndMaterial(warehouseId, materialId);
-        return inventory != null && inventory.getQuantity() >= requiredQuantity;
+        if (inventory == null) {
+            return false;
+        }
+        int available = inventory.getQuantity() - (inventory.getLockQuantity() != null ? inventory.getLockQuantity() : 0);
+        return available >= requiredQuantity;
     }
 
     @Override
     public List<Map<String, Object>> getStockAlerts() {
         return this.baseMapper.selectStockAlerts();
+    }
+
+    @Override
+    public Integer getTotalQuantityByWarehouseId(Long warehouseId) {
+        return this.baseMapper.selectTotalQuantityByWarehouseId(warehouseId);
+    }
+
+    @Override
+    @Transactional
+    public boolean lockQuantity(Long warehouseId, Long materialId, Integer quantity) {
+        if (quantity <= 0) return false;
+        Inventory inventory = this.getByWarehouseAndMaterial(warehouseId, materialId);
+        if (inventory == null) return false;
+        int available = inventory.getQuantity() - (inventory.getLockQuantity() != null ? inventory.getLockQuantity() : 0);
+        if (available < quantity) return false;
+        inventory.setLockQuantity((inventory.getLockQuantity() != null ? inventory.getLockQuantity() : 0) + quantity);
+        return this.updateById(inventory);
+    }
+
+    @Override
+    @Transactional
+    public boolean unlockQuantity(Long warehouseId, Long materialId, Integer quantity) {
+        if (quantity <= 0) return false;
+        Inventory inventory = this.getByWarehouseAndMaterial(warehouseId, materialId);
+        if (inventory == null) return false;
+        int currentLock = inventory.getLockQuantity() != null ? inventory.getLockQuantity() : 0;
+        inventory.setLockQuantity(Math.max(0, currentLock - quantity));
+        return this.updateById(inventory);
     }
 }

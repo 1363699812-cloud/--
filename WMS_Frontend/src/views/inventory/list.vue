@@ -86,8 +86,8 @@ const viewDetail = (row) => {
 
 onMounted(async () => {
   const [w, m] = await Promise.all([getAllWarehouses(), getAllMaterials()])
-  if (w.data.code === 200) warehouses.value = w.data.data
-  if (m.data.code === 200) materials.value = m.data.data
+  if (w.code === 200) warehouses.value = w.data
+  if (m.code === 200) materials.value = m.data
   loadData()
 })
 </script>

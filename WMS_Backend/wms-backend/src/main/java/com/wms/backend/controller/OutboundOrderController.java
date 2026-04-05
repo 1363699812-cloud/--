@@ -84,9 +84,13 @@ public class OutboundOrderController {
 
     @Log(value = "修改出库单", module = "出库管理")
     @PutMapping("/{id}")
-    public Result update(@PathVariable Long id, @RequestBody OutboundOrder order) {
-        order.setId(id);
-        return outboundOrderService.updateById(order) ? Result.success("更新成功") : Result.error("更新失败");
+    public Result update(@PathVariable Long id, @RequestBody CreateOutboundOrderRequest request) {
+        try {
+            boolean result = outboundOrderService.updateOutboundOrder(id, request.getOrder(), request.getItems());
+            return result ? Result.success("更新成功") : Result.error("更新失败");
+        } catch (RuntimeException e) {
+            return Result.error(e.getMessage());
+        }
     }
 
     @Log(value = "删除出库单", module = "出库管理")

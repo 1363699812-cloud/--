@@ -26,4 +26,6 @@ public interface IOutboundOrderService extends IService<OutboundOrder> {
      * 检查出库单是否有足够库存
      */
     boolean checkStockForOutbound(Long orderId);
+
+    boolean updateOutboundOrder(Long orderId, OutboundOrder order, List<OutboundItem> items);
 }

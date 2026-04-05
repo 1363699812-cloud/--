@@ -49,6 +49,7 @@
         <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="viewDetail(row)">详情</el-button>
+            <el-button link type="primary" v-if="row.status === 0" @click="openEditDialog(row)">编辑</el-button>
             <el-button link type="warning" v-if="row.status === 0" @click="handleAudit(row.id)">审核</el-button>
             <el-button link type="success" v-if="row.status === 1" @click="handleComplete(row.id)">入库</el-button>
             <el-button link type="danger" v-if="row.status === 0" @click="handleDelete(row.id)">删除</el-button>
@@ -68,7 +69,7 @@
     </el-card>
 
     <!-- 新建入库单弹窗 -->
-    <el-dialog v-model="dialogVisible" title="新建入库单" width="850px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="editingId ? '编辑入库单' : '新建入库单'" width="850px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-row :gutter="16">
           <el-col :span="8">
@@ -164,7 +165,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  getInboundOrderList, createInboundOrder, auditInboundOrder, completeInboundOrder,
+  getInboundOrderList, createInboundOrder, updateInboundOrder, auditInboundOrder, completeInboundOrder,
   deleteInboundOrder, getInboundItems, getAllWarehouses, getAllSuppliers, getAllMaterials
 } from '@/api'
 
@@ -182,6 +183,7 @@ const suppliers = ref([])
 const materials = ref([])
 const detail = reactive({})
 const detailItems = ref([])
+const editingId = ref(null)
 
 const query = reactive({ orderNo: '', status: null, supplierId: null, current: 1, size: 10 })
 const form = reactive({ warehouseId: null, supplierId: null, receiveDate: '', remark: '', items: [] })
@@ -209,8 +211,21 @@ const handleSearch = () => { query.current = 1; loadData() }
 const resetQuery = () => { Object.assign(query, { orderNo: '', status: null, supplierId: null, current: 1 }); loadData() }
 
 const openDialog = () => {
+  editingId.value = null
   Object.assign(form, { warehouseId: null, supplierId: null, receiveDate: '', remark: '', items: [] })
   addItem()
+  dialogVisible.value = true
+}
+
+const openEditDialog = async (row) => {
+  editingId.value = row.id
+  Object.assign(form, { warehouseId: row.warehouseId, supplierId: row.supplierId, receiveDate: row.receiveDate, remark: row.remark, items: [] })
+  const res = await getInboundItems(row.id)
+  if (res.code === 200) {
+    form.items = res.data.map(item => ({
+      materialId: item.materialId, quantity: item.quantity, unitPrice: item.unitPrice, batchNumber: item.batchNumber
+    }))
+  }
   dialogVisible.value = true
 }
 
@@ -222,8 +237,14 @@ const handleSubmit = () => {
     }
     submitting.value = true
     try {
-      const res = await createInboundOrder(form)
-      if (res.code === 200) { ElMessage.success('创建成功'); dialogVisible.value = false; loadData() }
+      const submitData = {
+        order: { warehouseId: form.warehouseId, supplierId: form.supplierId, receiveDate: form.receiveDate, remark: form.remark },
+        items: form.items.map(i => ({ materialId: i.materialId, quantity: i.quantity, unitPrice: i.unitPrice, amount: (i.quantity || 0) * (i.unitPrice || 0), batchNumber: i.batchNumber }))
+      }
+      const res = editingId.value
+        ? await updateInboundOrder(editingId.value, submitData)
+        : await createInboundOrder(submitData)
+      if (res.code === 200) { ElMessage.success(editingId.value ? '更新成功' : '创建成功'); dialogVisible.value = false; loadData() }
     } finally { submitting.value = false }
   })
 }
@@ -258,9 +279,9 @@ const handleDelete = (id) => {
 
 onMounted(async () => {
   const [w, s, m] = await Promise.all([getAllWarehouses(), getAllSuppliers(), getAllMaterials()])
-  if (w.data.code === 200) warehouses.value = w.data.data
-  if (s.data.code === 200) suppliers.value = s.data.data
-  if (m.data.code === 200) materials.value = m.data.data
+  if (w.code === 200) warehouses.value = w.data
+  if (s.code === 200) suppliers.value = s.data
+  if (m.code === 200) materials.value = m.data
   loadData()
 })
 </script>

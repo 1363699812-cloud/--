@@ -13,4 +13,7 @@ public interface IInventoryService extends IService<Inventory> {
     boolean decreaseQuantity(Long warehouseId, Long materialId, Integer quantity);
     boolean checkStockSufficient(Long warehouseId, Long materialId, Integer requiredQuantity);
     List<Map<String, Object>> getStockAlerts();
+    Integer getTotalQuantityByWarehouseId(Long warehouseId);
+    boolean lockQuantity(Long warehouseId, Long materialId, Integer quantity);
+    boolean unlockQuantity(Long warehouseId, Long materialId, Integer quantity);
 }

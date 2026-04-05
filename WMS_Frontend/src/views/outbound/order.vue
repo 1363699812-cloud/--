@@ -50,6 +50,7 @@
         <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="viewDetail(row)">详情</el-button>
+            <el-button link type="primary" v-if="row.status === 0" @click="openEditDialog(row)">编辑</el-button>
             <el-button link type="warning" v-if="row.status === 0" @click="handleAudit(row.id)">审核</el-button>
             <el-button link type="success" v-if="row.status === 1" @click="handleComplete(row.id)">出库</el-button>
             <el-button link type="danger" v-if="row.status === 0" @click="handleDelete(row.id)">删除</el-button>
@@ -69,7 +70,7 @@
     </el-card>
 
     <!-- 新建出库单-->
-    <el-dialog v-model="dialogVisible" title="新建出库单" width="850px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="editingId ? '编辑出库单' : '新建出库单'" width="850px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-row :gutter="16">
           <el-col :span="8">
@@ -170,7 +171,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  getOutboundOrderList, createOutboundOrder, auditOutboundOrder, completeOutboundOrder,
+  getOutboundOrderList, createOutboundOrder, updateOutboundOrder, auditOutboundOrder, completeOutboundOrder,
   deleteOutboundOrder, getOutboundItems, getAllWarehouses, getAllCustomers, getAllMaterials
 } from '@/api'
 
@@ -188,6 +189,7 @@ const customers = ref([])
 const materials = ref([])
 const detail = reactive({})
 const detailItems = ref([])
+const editingId = ref(null)
 
 const query = reactive({ orderNo: '', status: null, customerId: null, current: 1, size: 10 })
 const form = reactive({ warehouseId: null, customerId: null, recipient: '', department: '', issueDate: '', remark: '', items: [] })
@@ -215,8 +217,21 @@ const handleSearch = () => { query.current = 1; loadData() }
 const resetQuery = () => { Object.assign(query, { orderNo: '', status: null, customerId: null, current: 1 }); loadData() }
 
 const openDialog = () => {
+  editingId.value = null
   Object.assign(form, { warehouseId: null, customerId: null, recipient: '', department: '', issueDate: '', remark: '', items: [] })
   addItem()
+  dialogVisible.value = true
+}
+
+const openEditDialog = async (row) => {
+  editingId.value = row.id
+  Object.assign(form, { warehouseId: row.warehouseId, customerId: row.customerId, recipient: row.recipient, department: row.department, issueDate: row.issueDate, remark: row.remark, items: [] })
+  const res = await getOutboundItems(row.id)
+  if (res.code === 200) {
+    form.items = res.data.map(item => ({
+      materialId: item.materialId, quantity: item.quantity, unitPrice: item.unitPrice, batchNumber: item.batchNumber
+    }))
+  }
   dialogVisible.value = true
 }
 
@@ -228,8 +243,14 @@ const handleSubmit = () => {
     }
     submitting.value = true
     try {
-      const res = await createOutboundOrder(form)
-      if (res.code === 200) { ElMessage.success('创建成功'); dialogVisible.value = false; loadData() }
+      const submitData = {
+        order: { warehouseId: form.warehouseId, customerId: form.customerId, recipient: form.recipient, department: form.department, issueDate: form.issueDate, remark: form.remark },
+        items: form.items.map(i => ({ materialId: i.materialId, quantity: i.quantity, unitPrice: i.unitPrice, amount: (i.quantity || 0) * (i.unitPrice || 0), batchNumber: i.batchNumber }))
+      }
+      const res = editingId.value
+        ? await updateOutboundOrder(editingId.value, submitData)
+        : await createOutboundOrder(submitData)
+      if (res.code === 200) { ElMessage.success(editingId.value ? '更新成功' : '创建成功'); dialogVisible.value = false; loadData() }
     } finally { submitting.value = false }
   })
 }
@@ -264,9 +285,9 @@ const handleDelete = (id) => {
 
 onMounted(async () => {
   const [w, c, m] = await Promise.all([getAllWarehouses(), getAllCustomers(), getAllMaterials()])
-  if (w.data.code === 200) warehouses.value = w.data.data
-  if (c.data.code === 200) customers.value = c.data.data
-  if (m.data.code === 200) materials.value = m.data.data
+  if (w.code === 200) warehouses.value = w.data
+  if (c.code === 200) customers.value = c.data
+  if (m.code === 200) materials.value = m.data
   loadData()
 })
 </script>

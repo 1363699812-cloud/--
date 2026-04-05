@@ -51,6 +51,7 @@ export const createInboundOrder = (data) => request.post('/inbound-order', data)
 export const auditInboundOrder = (orderId) => request.post(`/inbound-order/${orderId}/audit`)
 export const completeInboundOrder = (orderId) => request.post(`/inbound-order/${orderId}/complete`)
 export const deleteInboundOrder = (id) => request.delete(`/inbound-order/${id}`)
+export const updateInboundOrder = (id, data) => request.put(`/inbound-order/${id}`, data)
 
 // ==================== 出库单 ====================
 export const getOutboundOrderList = (params) => request.get('/outbound-order/list', { params })
@@ -60,6 +61,7 @@ export const createOutboundOrder = (data) => request.post('/outbound-order', dat
 export const auditOutboundOrder = (orderId) => request.post(`/outbound-order/${orderId}/audit`)
 export const completeOutboundOrder = (orderId) => request.post(`/outbound-order/${orderId}/complete`)
 export const deleteOutboundOrder = (id) => request.delete(`/outbound-order/${id}`)
+export const updateOutboundOrder = (id, data) => request.put(`/outbound-order/${id}`, data)
 
 // ==================== 库存 ====================
 export const getInventoryList = (params) => request.get('/inventory/list', { params })

@@ -82,12 +82,14 @@ const renderChart = () => {
   })
 }
 
+const handleResize = () => chart?.resize()
+
 onMounted(() => {
   loadData()
-  window.addEventListener('resize', () => chart?.resize())
+  window.addEventListener('resize', handleResize)
 })
 onBeforeUnmount(() => {
   chart?.dispose()
-  window.removeEventListener('resize', () => chart?.resize())
+  window.removeEventListener('resize', handleResize)
 })
 </script>
