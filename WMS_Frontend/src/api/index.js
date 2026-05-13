@@ -110,6 +110,7 @@ export const getCategoryStats = () => request.get('/report/category-stats')
 export const getInventorySummary = (params) => request.get('/report/inventory-summary', { params })
 export const getAbcAnalysis = () => request.get('/report/abc-analysis')
 export const getTurnoverRate = (params) => request.get('/report/turnover-rate', { params })
+export const getReorderSuggestions = () => request.get('/report/reorder-suggestions')
 
 // ==================== 操作日志 ====================
 export const getOperationLogList = (params) => request.get('/operation-log/list', { params })

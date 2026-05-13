@@ -1,6 +1,7 @@
 package com.wms.backend.controller;
 
 import com.wms.backend.common.Result;
+import com.wms.backend.service.IReorderService;
 import com.wms.backend.service.IReportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,9 @@ public class ReportController {
 
     @Autowired
     private IReportService reportService;
+
+    @Autowired
+    private IReorderService reorderService;
 
     @GetMapping("/dashboard")
     public Result dashboard() {
@@ -51,5 +55,10 @@ public class ReportController {
     public Result turnoverRate(@RequestParam(required = false) String startDate,
                                @RequestParam(required = false) String endDate) {
         return Result.success(reportService.getTurnoverRate(startDate, endDate));
+    }
+
+    @GetMapping("/reorder-suggestions")
+    public Result reorderSuggestions() {
+        return Result.success(reorderService.getReorderSuggestions());
     }
 }

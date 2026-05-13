@@ -165,6 +165,12 @@ const routes = [
         component: () => import('@/views/report/turnover-rate.vue'),
         meta: { title: '库存周转率', icon: 'Refresh' },
       },
+      {
+        path: 'reorder',
+        name: 'Reorder',
+        component: () => import('@/views/report/reorder.vue'),
+        meta: { title: '补货建议', icon: 'ShoppingCart', roles: ['admin', 'warehouse_keeper', 'purchaser'] },
+      },
     ],
   },
   {
